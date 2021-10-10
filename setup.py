@@ -6,8 +6,9 @@ with open("README.rst", "r") as fh:
 setup(
     name='pyyellin',
     version='0.1.0dev',
-    author=  # TODO add your names, alphabetical list
-           'Leonie Einfalt, '
+    author='Leonie Einfalt, '
+           'Yasar Ilhan, '
+           'Fatih Okçu, '
            'Felix Wagner',
     author_email="felix.wagner@oeaw.ac.at",
     description='A Python implementation of Yellins optimum interval method.',

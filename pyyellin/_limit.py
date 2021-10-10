@@ -65,6 +65,8 @@ class Limit:
         self.thresholds.append(threshold)
         self.exposures.append(exposure)
 
+        assert 1>2, "test"
+
 
     def get_limit(self, signal_pars: list):
         """
