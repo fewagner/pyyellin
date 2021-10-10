@@ -13,7 +13,6 @@ class SignalModel:
         self.A = A
         self.METERS_TO_EV = const.hbar * const.c / const.e  # conversion factor to convert meters in c*hbar/eV
         self.RHO_X = 0.3 * 10 ** 6 * 10 ** 6 * self.METERS_TO_EV ** 3 / 10 ** 9  # density [keV/c^2/(c*hbar/keV)^3]
-        # self.A = 184.  # 184 mass number of tungsten, 131 mass number of xenon
         self.M_P = const.physical_constants["proton mass energy equivalent in MeV"][0]*10**3  # proton mass [keV/c^2]
         self.M_N = self.A*self.M_P  # nucleon mass [keV/c^2]
         self.S = 10 ** (-15) / self.METERS_TO_EV * 10 ** 3  # skin thickness [c*hbar/keV]
@@ -26,11 +25,12 @@ class SignalModel:
         self.F_C = (1.23*self.A**(1./3.)-.6) * 10 ** (-15) / self.METERS_TO_EV * 10 ** 3  # factor for nuclear radius r_0 [c*hbar/keV]
         pass
 
-    def set_detector(self, exposure: float, resolution: float, threshold: float):
+    def set_detector(self, exposure: float, resolution: float, threshold: float, material: int):
 
         self.exposure = exposure
         self.resolution = resolution
         self.threshold = threshold
+        self.A = material  # TODO: material in init or set_detector? -> calculations with A
 
     def pdf(self, x, pars):
         """
