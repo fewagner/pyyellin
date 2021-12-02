@@ -11,7 +11,7 @@ sample_size = 10000
 materials = [[23., 23/150, 'Na'], [127., 127/150, 'I']]
 sigmas = np.array([2, 3, 4, 5, 6])
 signal = yell.SignalModel()
-signal.set_detector(1, 1, 1, materials)
+signal.set_detector(1, 1, 1, materials, 16e3)
 pdf = signal.pdf(recoil_energies, m_chi)
 cdf = signal.cdf2(pdf)
 samples = signal.rvs2(sample_size, cdf)
@@ -19,7 +19,7 @@ pdf_sum = signal.pdf_sum(pdf, materials)
 cdf_sum = signal.cdf_sum(cdf, materials)
 samples_sum = signal.rvs_sum(sample_size, cdf_sum)
 
-mu = signal.get_mu(pdf_sum, sigmas)
+mus = signal.get_mus(pdf_sum, sigmas)
 
 with open('C:/Users/Fatih/Desktop/Project Minerva/Projektarbeit 1/xy_NaI.txt', 'r') as f:
     lines = f.readlines()[1:]
