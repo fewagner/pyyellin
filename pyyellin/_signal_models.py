@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 
 
 class SignalModel:
+    """
+    A class that ...
+    """
 
     def __init__(self):  #, A):  # def __init__(self):
         # Here global parameters for the signal model can be fixed. E.g. the escape velocity, ...
@@ -24,14 +27,27 @@ class SignalModel:
         self.V_EARTH = 220*1.05e3/const.c  # earth velocity [c]
         self.F_A = .52e-15/self.METERS_TO_EV*1e3  # factor for nuclear radius r_0 [c*hbar/keV]
         self.F_S = .9e-15/self.METERS_TO_EV*1e3  # factor for nuclear radius r_0 [c*hbar/keV]
+        self.exposure = 0.
+        self.resolution = 0.
+        self.threshold = 0.
+        self.materials = []
         pass
 
-    def set_detector(self, exposure: float, resolution: float, threshold: float, materials: list):
+    def set_detector(self, exposure: float, resolution: float, threshold: float, materials: list, upper_integral_limit: float):
+        """
+
+        :param exposure:
+        :param resolution:
+        :param threshold:
+        :param materials:
+        :return:
+        """
 
         self.exposure = exposure
         self.resolution = resolution
         self.threshold = threshold
         self.materials = materials
+        self.upper_integral_limit = upper_integral_limit
 
     def pdf(self, x, pars):
         """
@@ -64,18 +80,19 @@ class SignalModel:
             f = 3.*spherical_bessel_j1/(q*r_0)*np.exp(-0.5*q*q*self.S*self.S)  # TODO: DELETE?
             v_min = np.sqrt(recoil_energies*M_N/(2*mu_N**2))  # lowest speed of WIMP that can induce a nuclear recoil of E_R [c]
             x_min = np.sqrt(3*v_min**2/(2*self.W**2))  # factor needed for the analytical solution of the integral
-            x_min_1 = x_min[:np.where(x_min < (z-eta))[0][-1]+1]
-            x_min_2 = x_min[np.where(x_min >= (z-eta))[0][0]:np.where(x_min < (z+eta))[0][-1]+1]  # TODO: dim(recoil_energies) <= 1 geht nicht (Stabilität)
-            x_min_3 = x_min[np.where(x_min >= (z+eta))[0][0]:]
+            x_min_1 = [item for item in x_min if item < (z-eta)]
+            x_min_2 = [item for item in x_min if (z-eta) < item < (z+eta)]
+            x_min_3 = [item for item in x_min if (z+eta) < item]
             integral_1 = np.sqrt(np.pi)/2*(erf(x_min_1+eta)-erf(x_min_1-eta))-2*eta*np.exp(-z**2)
             integral_2 = np.sqrt(np.pi)/2*(erf(z)-erf(x_min_2-eta))-np.exp(-z**2)*(z+eta-x_min_2)
-            integral_3 = np.zeros(len(x_min_3))
+            integral_3 = np.zeros(len(x_min_3))  # TODO: Je kleiner die Masse, desto mehr Werte in xmin3 und umgekehrt -> true division error
             integral = np.concatenate((integral_1, integral_2, integral_3), axis=None)
             integral *= 1/(n*eta)*np.sqrt(3/(2*np.pi*self.W**2))
             rates_per_energy = self.RHO_X/(2.*mu_p**2*m_chi)*A**2*f**2*integral  # total interaction rate R per energy E [c^2/(hbar*keV)] per sigma [pbarn]
             rates_per_energy /= self.DIMENSION_FACTOR
-            # normalization = integrate.trapz(rates_per_energy, recoil_energies)  # normalization factor of the pdf
-            # rates_per_energy = rates_per_energy/normalization  # normalized pdf
+            # TODO: dimension analysis
+            normalization = integrate.trapz(rates_per_energy, recoil_energies)  # normalization factor of the pdf
+            rates_per_energy = rates_per_energy/normalization  # normalized pdf
             rates_per_energy_list.append(rates_per_energy)
 
         return recoil_energies, rates_per_energy_list
@@ -104,10 +121,8 @@ class SignalModel:
         """
         The cummulative density function of the signal model, evaluated at a given grid.
 
-        :param x: The grid for the evaluation.
-        :type x: list
-        :param pars: The signal parameters.
-        :type pars: list
+        :param pdf:
+        :type pdf:
         :return: The evaluated cummulative density function on the grid.
         :rtype: list
         """
@@ -121,6 +136,8 @@ class SignalModel:
         """
         Draw a sample from the signal model.
 
+        :param x:
+        :type x:
         :param size: The sample size
         :type size: int
         :param pars: The signal parameters.
@@ -145,10 +162,10 @@ class SignalModel:
         """
         Draw a sample from the signal model.
 
+        :param cdf:
+        :type cdf:
         :param size: The sample size
         :type size: int
-        :param pars: The signal parameters.
-        :type pars: list
         :return: The recoil energies (and possible other parameters) of the drawn sample.
         :rtype: list
         """
@@ -168,10 +185,10 @@ class SignalModel:
         """
         Draw a sample from the signal model.
 
+        :param cdf:
+        :type cdf:
         :param size: The sample size
         :type size: int
-        :param pars: The signal parameters.
-        :type pars: list
         :return: The recoil energies (and possible other parameters) of the drawn sample.
         :rtype: list
         """
@@ -185,6 +202,14 @@ class SignalModel:
         return np.array(sample)
 
     def pdf_sum(self, pdf, materials):
+        """
+
+        :param pdf:
+        :type pdf:
+        :param materials:
+        :type materials:
+        :return:
+        """
         """pdf_sum = np.zeros(np.shape(pdf[0])[0])
         for i in range(len(pdf[0])):
             for j in range(len(pdf[1])):
@@ -198,6 +223,14 @@ class SignalModel:
         return pdf[0], pdf_sum_2
 
     def cdf_sum(self, cdf, materials):
+        """
+
+        :param cdf:
+        :type cdf:
+        :param materials:
+        :type materials:
+        :return:
+        """
         """cdf_sum = np.zeros(np.shape(pdf[0])[0])
         for i in range(len(cdf[0])):
             for j in range(len(cdf[1])):
@@ -211,6 +244,16 @@ class SignalModel:
         return cdf[0], cdf_sum_2
 
     def log_plot(self, pdf, pdf_sum, materials):
+        """
+
+        :param pdf:
+        :type: pdf:
+        :param pdf_sum:
+        :type pdf_sum:
+        :param materials:
+        :type materials:
+        :return:
+        """
         plt.yscale("log")
         plt.xlim(0, 40)
         # plt.ylim(10**(-12), 10**0)  # TODO: limits aktivieren
@@ -223,6 +266,16 @@ class SignalModel:
         return
 
     def linear_sum_plot(self, pdf_sum, cdf_sum, samples_sum):
+        """
+
+        :param pdf_sum:
+        :type pdf_sum:
+        :param cdf_sum:
+        :type cdf_sum:
+        :param samples_sum:
+        :type samples_sum:
+        :return:
+        """
         plt.yscale("linear")
         plt.xlim(0, 40)
         # plt.ylim(0, 1)  # TODO: limits aktivieren
@@ -233,6 +286,16 @@ class SignalModel:
         plt.show()
         return
 
-    def get_mu(self, pdf_sum: list, sigmas: list):
-        mus = sum(pdf_sum[0]*pdf_sum[1])*np.array(sigmas)
+    def get_mus(self, pdf_sum: list, sigmas: list):
+        """
+
+        :param pdf_sum:
+        :type pdf_sum:
+        :param sigmas:
+        :type sigmas:
+        :return:
+        """
+        pdf_sum_limited_x = pdf_sum[0][:np.where(pdf_sum[0] < self.upper_integral_limit)[0][-1]+1]
+        pdf_sum_limited_y = pdf_sum[1][:len(pdf_sum_limited_x)]
+        mus = sum(pdf_sum_limited_x*pdf_sum_limited_y)*np.array(sigmas)
         return mus

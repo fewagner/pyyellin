@@ -1,5 +1,8 @@
+import csv
 import numpy as np
+import pandas as pd
 from scipy.stats import percentileofscore
+from matplotlib import pyplot as plt
 
 
 class Limit:
@@ -10,6 +13,10 @@ class Limit:
     def __init__(self):
 
         self.data = []
+        self.corresponding_cdf = []
+        self.table = []
+        self.sigmas = []
+        self.mus = []
         self.efficiencies = []
         self.eff_grids = []
         self.acc_regions = []
@@ -21,6 +28,24 @@ class Limit:
     # ------------------------------------------------
     # User API
     # ------------------------------------------------
+
+    def add_sigmas(self, sigmas):
+        """
+
+        :param sigmas:
+        :return:
+        """
+        self.sigmas = sigmas
+        return
+
+    def add_mus(self, mus):
+        """
+
+        :param mus:
+        :return:
+        """
+        self.mus = mus
+        return
 
     def add_data(self, data: list, efficiency: list, eff_grid: list, acc_region: tuple, signal_model: object,
                  resolution: float, threshold: float, exposure: float):
@@ -55,7 +80,7 @@ class Limit:
 
         self.data.append(np.array(data))
         self.efficiencies.append(np.array(efficiency))
-        self.eff_grid.append(np.array(eff_grid))
+        self.eff_grids.append(np.array(eff_grid))
         self.acc_regions.append(np.array(acc_region))
         self.signal_models.append(signal_model)
         self.resolutions.append(resolution)
@@ -64,92 +89,148 @@ class Limit:
 
         assert 1>2, "test"
 
-    def get_limit(self, signal_pars: list):
+    def get_limit(self, cdf):  # , signal_pars: list): TODO: cdfs as variable
         """
         Here the limit is calculated and returned.
 
+        :param cdf:
         :param signal_pars: List of the signal parameters for all signal models for the individual experiments.
         :type signal_pars: list
         :return: The limit for the given signal parameters.
         :rtype: float
         """
+        k_largest_intervals_table_3d = [[self._get_k_values(self.table[mu][n]) for n in range(len(self.table[mu]))] for mu in range(len(self.table))]
+        k_distributions_table_3d = [self._get_k_distribution(k_largest_intervals_table_3d[mu]) for mu in range(len(k_largest_intervals_table_3d))]
+        extremeness_table_3d = [[self._get_extremeness(k_largest_intervals_table_3d[mu][n], k_distributions_table_3d[mu]) for n in range(len(k_largest_intervals_table_3d[mu]))] for mu in range(len(k_largest_intervals_table_3d))]
+        gamma_max_table_2d = [[max(extremeness_table_3d[mu][n]) for n in range(len(extremeness_table_3d[mu]))] for mu in range(len(extremeness_table_3d))]
 
-        assert len(signal_pars) == len(self.data)
+        corresponding_cdf_values_data = self._get_corresponding_cdf_values(cdf)
+        k_largest_intervals_data = self._get_k_values(corresponding_cdf_values_data)
+        # print(k_largest_intervals_table_3d[-1][0])
+        # print(k_largest_intervals_data)
+        extremeness_data = [self._get_extremeness(k_largest_intervals_data, k_distributions_table_3d[mu]) for mu in range(len(k_distributions_table_3d))]
+        # print(extremeness_data)
+        cmaxs_data = [max(extremeness_data[mu]) for mu in range(len(extremeness_data))]
+        # print(cmaxs_data)
+        cbarmaxs_data = [self._get_extremeness(cmaxs_data[mu], gamma_max_table_2d[mu]) for mu in range(len(cmaxs_data))]
+        # print(cbarmaxs_data)
+        # assert len(signal_pars) == len(self.table)
 
         # TODO call here the function for the limit calculation
         pass
 
-    def tabulate(self, mus, size_of_uniform_array, number_of_uniform_arrays, max_energy):
-        uniform_arrays = np.random.rand(len(mus), number_of_uniform_arrays, size_of_uniform_array)  # *max_energy size Po verteilt
-        k_largest_intervals = np.array([self._get_k_values_uniform(uniform_arrays[i, j]) for j in range(number_of_uniform_arrays) for i in range(mus)])
-        extremeness = np.array([self._get_extremeness(k_largest_intervals[i, j]) for j in range(number_of_uniform_arrays) for i in range(mus)])
-        gamma_max_per_mu_and_N = np.array([self._get_gamma_max(extremeness[i, j]) for j in range(number_of_uniform_arrays) for i in range(mus)])
+    def make_table(self, flag, number_of_uniform_arrays, file_name):
+        if flag is True:
+            uniform_arrays = []
+            for mu in self.mus:
+                size_of_uniform_array = np.random.poisson(mu, number_of_uniform_arrays)
+                uniform_array = [[0.] + list(np.random.rand(size_of_uniform_array[i])) + [1.] for i in range(number_of_uniform_arrays)]
+                uniform_arrays.append(uniform_array)
+            with open(file_name + '.csv', 'w', encoding='UTF8', newline='') as f:
+                writer = csv.writer(f, delimiter=' ')
+                for mu in uniform_arrays:
+                    for n in mu:
+                        writer.writerow(n)
+                    writer.writerow('\n')
+        return
+
+    def get_data(self, file_name):
+        """
+        This function reads experiment data and saves it into a list. All lines starting with '#' will be skipped.
+        :param file_name:
+        :return:
+        """
+        with open(file_name, 'r', encoding='UTF8', newline='') as f:
+            dataset = f.readlines()
+            dataset = [0.] + [float(line.strip('\n')) for line in dataset if line[0] != '#'] + [1.]
+        dataset.sort()
+        self.data = dataset
+        return
+
+    def get_table(self, file_name):
+        """
+
+        :param file_name:
+        :return:
+        """
+        dataset = []
+        sub_dataset = []
+        with open(file_name, 'r', encoding='UTF8', newline='') as f:
+            reader = csv.reader(f, delimiter=' ', quoting=csv.QUOTE_NONNUMERIC)
+            for row in reader:
+                sub_dataset.append(row)
+                if row == ['\n']:
+                    dataset.append(sub_dataset[:-1])
+                    sub_dataset = []
+        self.table = dataset
         return
 
     # ------------------------------------------------
     # private
     # ------------------------------------------------
 
-    def _get_k_values_uniform(self, energy_array):
-        # kmax = len(energy_array)-2  # j := in range (1, kmax+2)
-        np.sort(energy_array)
-        k_largest_intervals_per_array = np.array([max([energy_array[i+j]-energy_array[i]
-                                                       for i in range(len(energy_array))])
-                                                  for j in range(1, len(energy_array))])
+    @staticmethod
+    def _get_k_values(energy_array):
+        """
+
+        :param energy_array:
+        :return:
+        """
+        energy_array = np.sort(energy_array)
+        k_largest_intervals_per_array = [max([energy_array[i+j]-energy_array[i] for i in range(len(energy_array)-j)])
+                                         for j in range(1, len(energy_array))]
         return k_largest_intervals_per_array
 
-    def _get_extremeness(self, k_largest_intervals_per_array):
-        extremeness = np.array([percentileofscore(k_largest_intervals_per_array, k_value)
-                                for k_value in k_largest_intervals_per_array])/100.
+    @staticmethod
+    def _get_k_distribution(k_largest_intervals):
+        """
+
+        :param k_largest_intervals:
+        :return:
+        """
+        df = pd.DataFrame(k_largest_intervals)
+        k_distributions = [list(df[i].dropna()) for i in range(df.columns.size)]
+        return k_distributions
+
+    @staticmethod
+    def _get_extremeness(k_largest_intervals_per_array, k_distributions):
+        """
+
+        :param k_largest_intervals_per_array:
+        :param k_distributions:
+        :return:
+        """
+        if type(k_largest_intervals_per_array) == list:
+            number_of_common_k_intervals = min([len(k_largest_intervals_per_array), len(k_distributions)])
+            extremeness = [percentileofscore(k_distributions[i], k_largest_intervals_per_array[i], kind='weak')/100.
+                           for i in range(number_of_common_k_intervals)]
+        elif type(k_largest_intervals_per_array) == float:
+            extremeness = percentileofscore(k_distributions, k_largest_intervals_per_array, kind='weak')/100.
+        else:
+            raise Exception('type(k_largest_intervals_per_array) must be either list or float')
         return extremeness
 
-    def _get_gamma_max(self, extremeness_per_array):
+    @staticmethod
+    def _get_gamma_max(extremeness_per_array):
+        """
+
+        :param extremeness_per_array:
+        :return:
+        """
         # get max value and index of max value of an array
         gamma_max = [max(extremeness_per_array), np.where(extremeness_per_array == max(extremeness_per_array))[0][0]]
         return gamma_max
 
-    def _get_Cmax(self, energy_array, cdfs):  # TODO: _get_k_values anders als vorher, da wir vorher eine uniforme Verteilung hatten und jetzt es vom Signal abhängt!! CDF brauchen wir!
-        np.sort(energy_array)
-        mu_dimension = len(cdfs)
-        kmax = len(energy_array)-2
-        corresponding_cdf_values_to_energy_per_mu = []
+    def _get_corresponding_cdf_values(self, cdf):
+        # data_sorted = np.sort(self.data)
         corresponding_cdf_values_to_energy = []
-        for mu_number in range(len(cdfs)):
-            for energy_value in energy_array:
-                for i in range(len(cdfs[mu_number][0])):
-                    if energy_value >= cdfs[mu_number][0][i]:
-                        corresponding_cdf_values_to_energy_per_mu.append(cdfs[mu_number][1][i])
-                        break
-            corresponding_cdf_values_to_energy.append(corresponding_cdf_values_to_energy_per_mu)
-        corresponding_cdf_values_to_energy = np.array(corresponding_cdf_values_to_energy)
-        k_largest_intervals = np.array([self._get_k_values_uniform(corresponding_cdf) for corresponding_cdf in corresponding_cdf_values_to_energy])
-        c_values_per_mu = np.array([self._get_extremeness(intervals_per_mu)] for intervals_per_mu in k_largest_intervals)
-        c_max_values_per_mu = np.array([self._get_gamma_max(c_values) for c_values in c_values_per_mu])
-        return c_max_values_per_mu
-
-    def _get_Cmax2(self, energy_array, cdfs):  # TODO: _get_k_values anders als vorher, da wir vorher eine uniforme Verteilung hatten und jetzt es vom Signal abhängt!! CDF brauchen wir!
-        np.sort(energy_array)
-        mu_dimension = len(cdfs)
-        kmax = len(energy_array)-2
-        corresponding_cdf_values_to_energy_per_mu = []
-        corresponding_cdf_values_to_energy = []
-        for mu_number in range(len(cdfs)):
-            for energy_value in energy_array:
-                for i in range(len(cdfs[mu_number][0])):
-                    if energy_value >= cdfs[mu_number][0][i]:
-                        corresponding_cdf_values_to_energy_per_mu.append(cdfs[mu_number][1][i])
-                        break
-            corresponding_cdf_values_to_energy.append(corresponding_cdf_values_to_energy_per_mu)
-        corresponding_cdf_values_to_energy = np.array(corresponding_cdf_values_to_energy)
-        k_largest_intervals = np.array([max([corresponding_cdf_values_to_energy[mu_number][i+j]-corresponding_cdf_values_to_energy[mu_number][i]
-                                             for i in range(len(energy_array))])
-                                        for j in range(1, len(energy_array))
-                                        for mu_number in range(mu_dimension)])
-        c_values_per_mu = np.array([percentileofscore(k_largest_intervals[mu_number], k_value)
-                                    for k_value in k_largest_intervals[mu_number]
-                                    for mu_number in range(mu_dimension)])/100.
-        c_max_values_per_mu = np.array([max(c_values_per_mu[mu_number]) for mu_number in range(mu_dimension)])
-        return c_max_values_per_mu
+        for energy_value in self.data:
+            for i in range(len(cdf[0])):
+                if cdf[0][i] - cdf[0][0] > energy_value:
+                    corresponding_cdf_values_to_energy.append(cdf[1][i-1])
+                    break
+        corresponding_cdf_values_to_energy = list(np.array(corresponding_cdf_values_to_energy)/max(corresponding_cdf_values_to_energy))
+        return corresponding_cdf_values_to_energy
 
     # here you can put function that are not callable for the user
     # these always start with an underscore:
