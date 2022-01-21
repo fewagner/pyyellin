@@ -104,16 +104,40 @@ class Limit:
         extremeness_table_3d = [[self._get_extremeness(k_largest_intervals_table_3d[mu][n], k_distributions_table_3d[mu]) for n in range(len(k_largest_intervals_table_3d[mu]))] for mu in range(len(k_largest_intervals_table_3d))]
         gamma_max_table_2d = [[max(extremeness_table_3d[mu][n]) for n in range(len(extremeness_table_3d[mu]))] for mu in range(len(extremeness_table_3d))]
 
+        print('gamma_max_table_2d[-1]')
+        print(sorted(gamma_max_table_2d[-1]))
+        # plt.hist(gamma_max_table_2d[-1], bins=20)
+        # plt.show()
+
         corresponding_cdf_values_data = self._get_corresponding_cdf_values(cdf)
         k_largest_intervals_data = self._get_k_values(corresponding_cdf_values_data)
-        # print(k_largest_intervals_table_3d[-1][0])
-        # print(k_largest_intervals_data)
+        # plt.hist(self.data, bins= 100)
+        # plt.hist(corresponding_cdf_values_data, bins=100)
+        # plt.hist(self.table[0][0], bins=100, alpha=0.5)
+        # plt.show()
+        print('\nk_largest_intervals_table_3d[-1][0]')
+        print(k_largest_intervals_table_3d[-1][0])
+        print('\nk_largest_intervals_data')
+        print(k_largest_intervals_data)
         extremeness_data = [self._get_extremeness(k_largest_intervals_data, k_distributions_table_3d[mu]) for mu in range(len(k_distributions_table_3d))]
-        # print(extremeness_data)
+        print('\nextremeness_data')
+        print(extremeness_data)
         cmaxs_data = [max(extremeness_data[mu]) for mu in range(len(extremeness_data))]
-        # print(cmaxs_data)
-        cbarmaxs_data = [self._get_extremeness(cmaxs_data[mu], gamma_max_table_2d[mu]) for mu in range(len(cmaxs_data))]
-        # print(cbarmaxs_data)
+        print('\ncmaxs_data')
+        print(cmaxs_data)
+        cmaxs_data_extremeness = [self._get_extremeness(cmaxs_data[mu], gamma_max_table_2d[mu]) for mu in range(len(cmaxs_data))]
+        print('\ncmaxs_data_extremeness')
+        print(cmaxs_data_extremeness)
+        plt.plot(self.mus, cmaxs_data_extremeness)
+        plt.show()
+        mu_index = 0
+        for i in range(len(cmaxs_data_extremeness)):
+            if cmaxs_data_extremeness[i] >= 0.9:
+                mu_index = i
+                break
+        mu_corresponding_to_cbarmax = self.mus[mu_index]
+        print('mu_index = ', mu_index)
+        print('mu_corresponding_to_cbarmax = ', mu_corresponding_to_cbarmax)
         # assert len(signal_pars) == len(self.table)
 
         # TODO call here the function for the limit calculation
@@ -123,6 +147,7 @@ class Limit:
         if flag is True:
             uniform_arrays = []
             for mu in self.mus:
+                # size_of_uniform_array = np.array([int(mu) for i in range(number_of_uniform_arrays)])  # für gleichlange Datasets
                 size_of_uniform_array = np.random.poisson(mu, number_of_uniform_arrays)
                 uniform_array = [[0.] + list(np.random.rand(size_of_uniform_array[i])) + [1.] for i in range(number_of_uniform_arrays)]
                 uniform_arrays.append(uniform_array)
@@ -142,7 +167,7 @@ class Limit:
         """
         with open(file_name, 'r', encoding='UTF8', newline='') as f:
             dataset = f.readlines()
-            dataset = [0.] + [float(line.strip('\n')) for line in dataset if line[0] != '#'] + [1.]
+            dataset = [float(line.strip('\n')) for line in dataset if line[0] != '#']
         dataset.sort()
         self.data = dataset
         return
@@ -202,10 +227,10 @@ class Limit:
         """
         if type(k_largest_intervals_per_array) == list:
             number_of_common_k_intervals = min([len(k_largest_intervals_per_array), len(k_distributions)])
-            extremeness = [percentileofscore(k_distributions[i], k_largest_intervals_per_array[i], kind='weak')/100.
+            extremeness = [percentileofscore(k_distributions[i], k_largest_intervals_per_array[i], kind='mean')/100.
                            for i in range(number_of_common_k_intervals)]
         elif type(k_largest_intervals_per_array) == float:
-            extremeness = percentileofscore(k_distributions, k_largest_intervals_per_array, kind='weak')/100.
+            extremeness = percentileofscore(k_distributions, k_largest_intervals_per_array, kind='mean')/100.
         else:
             raise Exception('type(k_largest_intervals_per_array) must be either list or float')
         return extremeness
@@ -229,6 +254,7 @@ class Limit:
                 if cdf[0][i] - cdf[0][0] > energy_value:
                     corresponding_cdf_values_to_energy.append(cdf[1][i-1])
                     break
+        corresponding_cdf_values_to_energy = list(np.array(corresponding_cdf_values_to_energy)-min(corresponding_cdf_values_to_energy))
         corresponding_cdf_values_to_energy = list(np.array(corresponding_cdf_values_to_energy)/max(corresponding_cdf_values_to_energy))
         return corresponding_cdf_values_to_energy
 

@@ -3,7 +3,6 @@ import numpy as np
 from scipy import integrate
 from scipy import constants as const
 from scipy.special import erf
-from scipy.special import spherical_jn
 import matplotlib.pyplot as plt
 
 
@@ -17,6 +16,7 @@ class SignalModel:
         # self.A = A
         self.METERS_TO_EV = const.hbar*const.c/const.e  # conversion factor to convert meters in c*hbar/eV
         self.DIMENSION_FACTOR = const.hbar/86400  # conversion factor to convert the dimension of dR/dE from c^2/(hbar*keV) in 1/(kg*d*keV)
+        self.DIMENSION_FACTOR_2 = 1e-40/self.METERS_TO_EV**2
         self.RHO_X = 0.3e6*1e6*self.METERS_TO_EV**3/1e9  # density [keV/c^2/(c*hbar/keV)^3]
         self.M_P = const.physical_constants["proton mass energy equivalent in MeV"][0]*10**3  # proton mass [keV/c^2]
         self.S = 1e-15/self.METERS_TO_EV*1e3  # skin thickness [c*hbar/keV]
@@ -74,15 +74,19 @@ class SignalModel:
             recoil_energies = np.copy(x)  # np.arange(0.01, 200, 0.01)  # recoil energies [keV]
             eta = np.sqrt(3/2)*self.V_EARTH/self.W  # factor needed for the analytical solution of the integral
 
-            q = np.sqrt(2*M_N*recoil_energies)  # momentum transferred in the scattering process [keV/c]
-            # f = 3*spherical_jn(1, q*r_0)/(q*r_0)*np.exp(-0.5*q*q*self.S*self.S)  # TODO: DELETE?
-            spherical_bessel_j1 = (np.sin(q*r_0)/(q*r_0)**2)-(np.cos(q*r_0)/(q*r_0))  # TODO: DELETE?
-            f = 3.*spherical_bessel_j1/(q*r_0)*np.exp(-0.5*q*q*self.S*self.S)  # TODO: DELETE?
+            q = np.sqrt(2*M_N*recoil_energies)  # momentum transferred in the scattering process [keV/c])
+            spherical_bessel_j1 = (np.sin(q*r_0)/(q*r_0)**2)-(np.cos(q*r_0)/(q*r_0))
+            f = 3.*spherical_bessel_j1/(q*r_0)*np.exp(-0.5*q*q*self.S*self.S)
             v_min = np.sqrt(recoil_energies*M_N/(2*mu_N**2))  # lowest speed of WIMP that can induce a nuclear recoil of E_R [c]
             x_min = np.sqrt(3*v_min**2/(2*self.W**2))  # factor needed for the analytical solution of the integral
-            x_min_1 = [item for item in x_min if item < (z-eta)]
-            x_min_2 = [item for item in x_min if (z-eta) < item < (z+eta)]
-            x_min_3 = [item for item in x_min if (z+eta) < item]
+            x_min_1, x_min_2, x_min_3 = [], [], []
+            for item in x_min:
+                if item <= (z-eta):
+                    x_min_1.append(item)
+                elif (z-eta) < item <= (z+eta):
+                    x_min_2.append(item)
+                else:
+                    x_min_3.append(item)
             integral_1 = np.sqrt(np.pi)/2*(erf(x_min_1+eta)-erf(x_min_1-eta))-2*eta*np.exp(-z**2)
             integral_2 = np.sqrt(np.pi)/2*(erf(z)-erf(x_min_2-eta))-np.exp(-z**2)*(z+eta-x_min_2)
             integral_3 = np.zeros(len(x_min_3))  # TODO: Je kleiner die Masse, desto mehr Werte in xmin3 und umgekehrt -> true division error
@@ -90,9 +94,10 @@ class SignalModel:
             integral *= 1/(n*eta)*np.sqrt(3/(2*np.pi*self.W**2))
             rates_per_energy = self.RHO_X/(2.*mu_p**2*m_chi)*A**2*f**2*integral  # total interaction rate R per energy E [c^2/(hbar*keV)] per sigma [pbarn]
             rates_per_energy /= self.DIMENSION_FACTOR
+            # rates_per_energy /= self.DIMENSION_FACTOR_2
             # TODO: dimension analysis
-            normalization = integrate.trapz(rates_per_energy, recoil_energies)  # normalization factor of the pdf
-            rates_per_energy = rates_per_energy/normalization  # normalized pdf
+            # normalization = integrate.trapz(rates_per_energy, recoil_energies)  # normalization factor of the pdf
+            # rates_per_energy = rates_per_energy/normalization  # normalized pdf
             rates_per_energy_list.append(rates_per_energy)
 
         return recoil_energies, rates_per_energy_list
