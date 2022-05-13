@@ -6,6 +6,8 @@ from scipy.special import erf
 from scipy.stats import norm
 from scipy import optimize
 
+from matplotlib import pyplot as plt
+
 
 class SignalModel:
     """
@@ -35,10 +37,13 @@ class SignalModel:
         self.resolution = 0.
         self.threshold = 0.
         self.upper_integral_limit = 0.
+        self.energy_grid_step_size = 0.0005
         self.materials = []
-        self.normalization_factor = 1.
+        self.pdf_sum_normalization_factor = 1.
+        self.pdf_sum_convoluted_normalization_factor = 1.
         self.normalization_list = []
         self.cut_eff = []
+        self.material_AR_eff = []
         self.energy_grid = []
 
     def set_detector(self, exposure: float, resolution: float, threshold: float, materials: list,
@@ -60,8 +65,11 @@ class SignalModel:
         self.threshold = threshold
         self.materials = materials
         self.upper_integral_limit = upper_integral_limit
-        self.energy_grid = np.arange(threshold-3*resolution, upper_integral_limit+3*resolution, energy_grid_step_size)
+        self.energy_grid_step_size = energy_grid_step_size
+        # self.energy_grid = np.arange(threshold-3*resolution, upper_integral_limit+3*resolution, energy_grid_step_size)
+        self._set_material_AR_eff()
         return
+
 
     def pdf(self, pars: float):
         """
@@ -73,6 +81,28 @@ class SignalModel:
         """
         rates_per_energy_list = []
         self.normalization_list = []
+
+        energies_x_min_3 = []
+        for element in self.materials:
+            energy_grid_mock = np.arange(self.threshold-3*self.resolution, 1000, 0.05)
+            A = element[0]
+            M_N = A*self.M_P
+            m_chi = np.copy(pars)*1e6
+            mu_N = M_N*m_chi/(M_N+m_chi)
+            v_min = np.sqrt(energy_grid_mock * M_N / (2 * mu_N ** 2))
+            x_min = np.sqrt(3*v_min**2/(2*self.W**2))
+            z = np.sqrt(3/2)*self.V_ESC/self.W
+            eta = np.sqrt(3/2)*self.V_EARTH/self.W
+            x_min_3_mock_list = [item for item in x_min if item >= (z+eta)]
+            energies_x_min_3.append(energy_grid_mock[len(energy_grid_mock)-len(x_min_3_mock_list)])
+        print(f'm_chi: {np.copy(pars)} GeV')
+        print('max(energies_x_min_3):', max(energies_x_min_3))
+        if max(energies_x_min_3) < 1:
+            max_energy = 1.
+        else:
+            max_energy = max(energies_x_min_3)
+        self.energy_grid = np.arange(self.threshold-3*self.resolution, max_energy, self.energy_grid_step_size)
+
         for element in self.materials:
             A = element[0]
             M_N = A*self.M_P  # nucleon mass [keV/c^2]
@@ -105,7 +135,8 @@ class SignalModel:
             integral *= 1/(n*eta)*np.sqrt(3/(2*np.pi*self.W**2))
             rates_per_energy = self.RHO_X/(2.*mu_p**2*m_chi)*A**2*f**2*integral  # total interaction rate R per energy E [c^2/(hbar*keV)] per sigma [pbarn]
             rates_per_energy *= self.DIMENSION_FACTOR
-            rates_per_energy = rates_per_energy*self.cut_eff
+            rates_per_energy = rates_per_energy*self.cut_eff[:len(rates_per_energy)]
+            rates_per_energy = rates_per_energy*self.material_AR_eff[list(self.materials).index(element)][:len(rates_per_energy)]
             normalization = integrate.trapz(rates_per_energy, self.energy_grid)  # normalization factor of the pdf
             rates_per_energy = rates_per_energy/normalization  # normalized pdf
             rates_per_energy_list.append(rates_per_energy)
@@ -219,8 +250,7 @@ class SignalModel:
                     break
         return np.array(sample)
 
-    @staticmethod
-    def pdf_sum(pdf: list, materials: list):
+    def pdf_sum(self, pdf: list, materials: list):
         """
         Sum the pdfs of the given materials according to their percentage in the molecule.
 
@@ -232,7 +262,9 @@ class SignalModel:
 
         pdf_sum = np.zeros(np.shape(pdf[0])[0])
         for i in range(len(pdf[1])):
-            pdf_sum += pdf[1][i]*materials[i][1]
+            pdf_sum += pdf[1][i]*materials[i][1]*self.normalization_list[i]
+        self.pdf_sum_normalization_factor = integrate.trapz(pdf_sum, self.energy_grid)  # normalization factor of the pdf
+        pdf_sum = pdf_sum/self.pdf_sum_normalization_factor  # normalized pdf
 
         return pdf[0], pdf_sum
 
@@ -262,11 +294,11 @@ class SignalModel:
         :return: Expected amount of events μ.
         :rtype: numpy array
         """
-        pdf_sum = pdf_sum_convoluted[1]*self.cut_eff
-        self.normalization_factor = sum([self.normalization_list[i]*self.materials[i][1] for i in range(len(self.materials))])
-        pdf_sum_limited_x = pdf_sum_convoluted[0][np.where(pdf_sum_convoluted[0] > self.threshold)[0][0]:np.where(pdf_sum_convoluted[0] < self.upper_integral_limit)[0][-1]+1]
-        pdf_sum_limited_y = pdf_sum[np.where(pdf_sum_convoluted[0] > self.threshold)[0][0]:np.where(pdf_sum_convoluted[0] < self.upper_integral_limit)[0][-1]+1]
-        mus = integrate.trapz(pdf_sum_limited_y, pdf_sum_limited_x)*np.array(sigmas)*self.normalization_factor*self.exposure
+        pdf_sum = pdf_sum_convoluted[1]*self.cut_eff[:len(pdf_sum_convoluted[1])]
+        pdf_sum_convoluted_limited_x = pdf_sum_convoluted[0][np.where(pdf_sum_convoluted[0] > self.threshold)[0][0]:np.where(pdf_sum_convoluted[0] < self.upper_integral_limit)[0][-1]+1]
+        pdf_sum_convoluted_limited_y = pdf_sum[np.where(pdf_sum_convoluted[0] > self.threshold)[0][0]:np.where(pdf_sum_convoluted[0] < self.upper_integral_limit)[0][-1]+1]
+        mus = integrate.trapz(pdf_sum_convoluted_limited_y, pdf_sum_convoluted_limited_x)*np.array(sigmas)*self.pdf_sum_convoluted_normalization_factor*self.exposure
+        print('mus:', mus)
         return mus
 
     def set_cut_eff(self, file_name):
@@ -284,7 +316,8 @@ class SignalModel:
             dataset = [line.split('\t') for line in dataset if line[0] != '#']
         self.cut_eff.append([float(number[0]) for number in dataset])
         self.cut_eff.append([float(number[1]) for number in dataset])
-        y_interp = np.interp(self.energy_grid, self.cut_eff[0], self.cut_eff[1])
+        energy_grid = np.arange(self.threshold-3*self.resolution, 1000, self.energy_grid_step_size)
+        y_interp = np.interp(energy_grid, self.cut_eff[0], self.cut_eff[1])
         self.cut_eff = np.copy(y_interp)
         return
 
@@ -298,8 +331,35 @@ class SignalModel:
         """
         gauss_x = np.arange(-10*self.resolution, 10*self.resolution, 0.0005)  # 10 sigma Bereich, 0.5 eV steps
         gauss = norm.pdf(gauss_x, scale=self.resolution)
-        pdf_sum_convoluted = np.convolve(pdf_sum[1], gauss, mode='same')/np.sum(gauss)
+        pdf_sum_convoluted = np.convolve(pdf_sum[1]*self.pdf_sum_normalization_factor, gauss, mode='same')/np.sum(gauss)
+        self.pdf_sum_convoluted_normalization_factor = integrate.trapz(pdf_sum[1], self.energy_grid)  # normalization factor of the pdf
+        pdf_sum_convoluted = pdf_sum_convoluted/self.pdf_sum_convoluted_normalization_factor  # normalized pdf
         return self.energy_grid, pdf_sum_convoluted
+
+    def _set_material_AR_eff(self):
+        """
+        Set probability of being in the acceptance region for each material.
+
+        :return: None
+        """
+        for i in range(len(self.materials)):
+            y_interp = []
+            x_axis = []
+            y_axis = []
+            with open(self.materials[i][-1], 'r', encoding='UTF8', newline='') as f:
+                dataset = f.readlines()
+                dataset = [line.strip('\n') for line in dataset if line[0] != '#']
+                dataset = [line.split('\t') for line in dataset if line[0] != '#']
+            x_axis.append([float(number[0]) for number in dataset])
+            y_axis.append([float(number[1]) for number in dataset])
+            energy_grid = np.arange(self.threshold-3*self.resolution, 1000, self.energy_grid_step_size)
+            y_interp = np.interp(energy_grid, x_axis[0], y_axis[0])
+            plt.plot(energy_grid, y_interp)
+            plt.title(f'{self.materials[i][2]}')
+            plt.xlim([0, 30])
+            plt.show()
+            self.material_AR_eff.append(y_interp)
+        return
 
     # m_N_min is the nucleus with the smallest mass (for NaI its Na)  # TODO: Include?
     def _e_max_func(self, m_dm, materials):

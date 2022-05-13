@@ -102,7 +102,7 @@ class Ilok(yell.SignalModel, yell.Limit):
         :return: None
         """
         self.mus = np.geomspace(min_mu, max_mu, 1000)
-        print('real mus =', self.mus)
+        # print('real mus =', self.mus)
         return
 
     def add_sigmas_and_mus(self, sigmas, mus):
@@ -118,85 +118,85 @@ class Ilok(yell.SignalModel, yell.Limit):
         self.mus_from_cdf = mus
         return
 
-    def calculate_items(self, pdf: bool = True, cdf: bool = True, samples: bool = False,
-                        pdf_sum: bool = True, cdf_sum: bool = True, samples_sum: bool = False,
-                        pdf_sum_convoluted: bool = True, cdf_sum_convoluted: bool = True, samples_sum_convoluted: bool = False,
-                        mus: bool = True):
+    def calculate_items(self, pdf_bool: bool = True, cdf_bool: bool = True, samples_bool: bool = False,
+                        pdf_sum_bool: bool = True, cdf_sum_bool: bool = True, samples_sum_bool: bool = False,
+                        pdf_sum_convoluted_bool: bool = True, cdf_sum_convoluted_bool: bool = True, samples_sum_convoluted_bool: bool = False,
+                        mus_bool: bool = True):
         """
         Calculate the following based on the WIMP model for dark matter.
 
-        :param pdf: Probability density functions.
-        :param cdf: Cumulative density functions.
-        :param samples: Random variable samples.
-        :param pdf_sum: Sum the pdfs of the given materials according to their percentage in the molecule.
-        :param cdf_sum: Sum the cdfs of the given materials according to their percentage in the molecule.
-        :param samples_sum: Random variable samples using cdf_sum.
-        :param pdf_sum_convoluted: The convoluted and summed pdf in order to take into account the finite energy resolution.
-        :param cdf_sum_convoluted: The convoluted and summed cdf in order to take into account the finite energy resolution.
-        :param samples_sum_convoluted: Random variable samples using cdf_sum_convoluted.
-        :param mus: Expected number of events based on pdf_sum_convoluted.
+        :param pdf_bool: Probability density functions.
+        :param cdf_bool: Cumulative density functions.
+        :param samples_bool: Random variable samples.
+        :param pdf_sum_bool: Sum the pdfs of the given materials according to their percentage in the molecule.
+        :param cdf_sum_bool: Sum the cdfs of the given materials according to their percentage in the molecule.
+        :param samples_sum_bool: Random variable samples using cdf_sum.
+        :param pdf_sum_convoluted_bool: The convoluted and summed pdf in order to take into account the finite energy resolution.
+        :param cdf_sum_convoluted_bool: The convoluted and summed cdf in order to take into account the finite energy resolution.
+        :param samples_sum_convoluted_bool: Random variable samples using cdf_sum_convoluted.
+        :param mus_bool: Expected number of events based on pdf_sum_convoluted.
         :return: List of wanted parameters in the following order: pdf, cdf, samples, pdf_sum, cdf_sum, samples_sum,
         pdf_sum_convoluted, cdf_sum_convoluted, samples_sum_convoluted, mus.
         :rtype: list
         """
-        if cdf is True and pdf is False:
+        if cdf_bool is True and pdf_bool is False:
             raise Exception('Set pdf True in order to calculate cdf.')
-        if samples is True and (pdf or cdf is False):
+        if samples_bool is True and (pdf_bool or cdf_bool) is False:
             raise Exception('Set pdf and cdf True in order to calculate samples.')
-        if pdf_sum is True and pdf is False:
+        if pdf_sum_bool is True and pdf_bool is False:
             raise Exception('Set pdf True in order to calculate pdf_sum.')
-        if cdf_sum is True and (pdf or cdf is False):
+        if cdf_sum_bool is True and (pdf_bool or cdf_bool) is False:
             raise Exception('Set pdf and cdf True in order to calculate cdf_sum.')
-        if samples_sum is True and (pdf or cdf or cdf_sum is False):
+        if samples_sum_bool is True and (pdf_bool or cdf_bool or cdf_sum_bool) is False:
             raise Exception('Set pdf, cdf and cdf_sum True in order to calculate samples_sum.')
-        if pdf_sum_convoluted is True and (pdf or pdf_sum is False):
+        if pdf_sum_convoluted_bool is True and (pdf_bool or pdf_sum_bool) is False:
             raise Exception('Set pdf, pdf_sum True in order to calculate pdf_sum_convoluted.')
-        if cdf_sum_convoluted is True and (pdf or pdf_sum or pdf_sum_convoluted is False):
+        if cdf_sum_convoluted_bool is True and (pdf_bool or pdf_sum_bool or pdf_sum_convoluted_bool) is False:
             raise Exception('Set pdf, pdf_sum and pdf_sum_convoluted True in order to calculate cdf_sum_convoluted.')
-        if samples_sum_convoluted is True and (pdf or pdf_sum or pdf_sum_convoluted or cdf_sum_convoluted is False):
+        if samples_sum_convoluted_bool is True and (pdf_bool or pdf_sum_bool or pdf_sum_convoluted_bool or cdf_sum_convoluted_bool) is False:
             raise Exception('Set pdf, pdf_sum, pdf_sum_convoluted and cdf_sum_convoluted True in order to calculate samples_sum_convoluted.')
-        if mus is True and (pdf or pdf_sum or pdf_sum_convoluted is False):
+        if mus_bool is True and (pdf_bool or pdf_sum_bool or pdf_sum_convoluted_bool) is False:
             raise Exception('Set pdf, pdf_sum and pdf_sum_convoluted True in order to calculate mus.')
 
         what_to_return_lists = []
         for mass in self.masses:
-            if pdf is True:
+            if pdf_bool is True:
                 pdf = self.pdf(mass)
             else:
                 pdf = None
-            if cdf is True:
+            if cdf_bool is True:
                 cdf = self.cdf_from_pdf(pdf)
             else:
                 cdf = None
-            if samples is True:
+            if samples_bool is True:
                 samples = self.rvs2(self.size, cdf)
             else:
                 samples = None
-            if pdf_sum is True:
+            if pdf_sum_bool is True:
                 pdf_sum = self.pdf_sum(pdf, self.materials)
             else:
                 pdf_sum = None
-            if cdf_sum is True:
+            if cdf_sum_bool is True:
                 cdf_sum = self.cdf_sum(cdf, self.materials)
             else:
                 cdf_sum = None
-            if samples_sum is True:
+            if samples_sum_bool is True:
                 samples_sum = self.rvs_sum(self.size, cdf_sum)
             else:
                 samples_sum = None
-            if pdf_sum_convoluted is True:
+            if pdf_sum_convoluted_bool is True:
                 pdf_sum_convoluted = self.pdf_sum_convolution(pdf_sum)
             else:
                 pdf_sum_convoluted = None
-            if cdf_sum_convoluted is True:
+            if cdf_sum_convoluted_bool is True:
                 cdf_sum_convoluted = self.cdf_from_convoluted_pdf(pdf_sum_convoluted)
             else:
                 cdf_sum_convoluted = None
-            if samples_sum_convoluted is True:
+            if samples_sum_convoluted_bool is True:
                 samples_sum_convoluted = self.rvs_sum(self.size, cdf_sum_convoluted)
             else:
                 samples_sum_convoluted = None
-            if mus is True:  # TODO: get mus with pdf_sum_convoluted if True, otherwise with pdf_sum
+            if mus_bool is True:  # TODO: get mus with pdf_sum_convoluted if True, otherwise with pdf_sum
                 mus = self.get_mus(pdf_sum_convoluted, self.sigmas)
             else:
                 mus = None
@@ -268,59 +268,74 @@ class Ilok(yell.SignalModel, yell.Limit):
             cmaxs_data_extremeness = [self._get_extremeness(cmaxs_data[mu], gamma_max_table_2d[mu]) for mu in range(len(cmaxs_data))]
             y_filter = savgol_filter(cmaxs_data_extremeness, window_length=35, polyorder=3)
 
-            plt.plot(self.mus, cmaxs_data_extremeness, label='raw')
-            plt.plot(self.mus, y_filter, label='filter')
-            plt.legend()
-            plt.show()
+            # plt.plot(self.mus, cmaxs_data_extremeness, label='raw')
+            # plt.plot(self.mus, y_filter, label='filter')
+            # plt.legend()
+            # plt.show()
 
-            how_many_1, how_many_2 = 0, 0
+            above_count, below_count = 0, 0
             there_are_values_above_90, there_are_values_below_90 = False, False
             for i in range(len(cmaxs_data_extremeness)):
-                if (not there_are_values_above_90 or not there_are_values_below_90) is True:
-                    if cmaxs_data_extremeness[i] >= self.cl:
-                        how_many_1 += 1
-                        if how_many_1 == int(0.05*len(self.mus)):
-                            there_are_values_above_90 = True
-                    else:
-                        how_many_2 += 1
-                        if how_many_2 == int(0.05*len(self.mus)):
-                            there_are_values_below_90 = True
+                # if (not there_are_values_above_90 or not there_are_values_below_90) is True:
+                if cmaxs_data_extremeness[i] >= self.cl:
+                    above_count += 1
+                    if above_count == int(0.05*len(self.mus)):
+                        there_are_values_above_90 = True
+                else:
+                    below_count += 1
+                    if below_count == int(0.05*len(self.mus)):
+                        there_are_values_below_90 = True
             if there_are_values_above_90 == there_are_values_below_90 == True:
                 print('Acceptable mu_bar can be found for this mass in this mu interval.')
-            elif there_are_values_above_90 == True and there_are_values_below_90 == False:
+            elif there_are_values_above_90 is True and there_are_values_below_90 is False:
                 print('This mu interval is not suited for this mass, hence all cmax values seem to be above 90%.')
-            elif there_are_values_above_90 == False and there_are_values_below_90 == True:
+            elif there_are_values_above_90 is False and there_are_values_below_90 is True:
                 print('This mu interval is not suited for this mass, hence all cmax values seem to be below 90%.')
             else:
                 print('There seems to be a problem with the calculation of cmax values.')
 
             if there_are_values_above_90 == there_are_values_below_90 == True:
-                mu_index = 0
-                for i in range(len(cmaxs_data_extremeness)):
-                    if cmaxs_data_extremeness[i] >= self.cl:
-                        mu_index = i
-                        mu_bar = self.mus[mu_index]
-                        sigma_bar = self._find_sigma_bar_from_mu_linear_model(mu_bar)
-                        print('mu_index = ', mu_index)
-                        print('mu_bar = ', mu_bar)
-                        print('sigma_bar = ', sigma_bar)
-                        break
-
-                mu_index = 0
-                for i in range(len(y_filter)):
-                    if y_filter[i] >= self.cl:
-                        mu_index = i
-                        mu_bar = self.mus[mu_index]
-                        sigma_bar = self._find_sigma_bar_from_mu_linear_model(mu_bar)
-                        print('mu_index = ', mu_index)
-                        print('mu_bar (filter) = ', mu_bar)
-                        print('sigma_bar = ', sigma_bar)
-                        masses_for_plot.append(mass)
-                        self.mus_corresponding_to_cbarmax_list.append(mu_bar)
-                        self.sigmas_corresponding_to_cbarmax_list.append(sigma_bar)
-                        break
-                        # assert len(signal_pars) == len(self.table)
+                new_x = sorted(list(cmaxs_data_extremeness)+list([self.cl]))
+                y_interp = np.interp(new_x, cmaxs_data_extremeness, self.mus)
+                mu_bar = y_interp[np.intersect1d(new_x, list([self.cl]), return_indices=True)[1]][0]
+                sigma_bar = self._find_sigma_bar_from_mu_linear_model(mu_bar)
+                print('mu_bar = ', mu_bar)
+                print('sigma_bar = ', sigma_bar)
+                # mu_index = 0
+                # for i in range(len(cmaxs_data_extremeness)):
+                #     if cmaxs_data_extremeness[i] >= self.cl:
+                #         mu_index = i
+                #         mu_bar = self.mus[mu_index]
+                #         sigma_bar = self._find_sigma_bar_from_mu_linear_model(mu_bar)
+                #         print('mu_index = ', mu_index)
+                #         print('mu_bar = ', mu_bar)
+                #         print('sigma_bar = ', sigma_bar)
+                #         break
+                new_x = sorted(list(y_filter)+list([self.cl]))
+                y_interp = np.interp(new_x, y_filter, self.mus)
+                mu_bar = y_interp[np.intersect1d(new_x, list([self.cl]), return_indices=True)[1]][0]
+                sigma_bar = self._find_sigma_bar_from_mu_linear_model(mu_bar)
+                print('mu_bar = ', mu_bar)
+                print('sigma_bar = ', sigma_bar)
+                masses_for_plot.append(mass)
+                self.mus_corresponding_to_cbarmax_list.append(mu_bar)
+                self.sigmas_corresponding_to_cbarmax_list.append(sigma_bar)
+                # mu_index = 0
+                # for i in range(len(y_filter)):
+                #     if y_filter[i] >= self.cl:
+                #         mu_index = i
+                #         mu_bar = self.mus[mu_index]
+                #         sigma_bar = self._find_sigma_bar_from_mu_linear_model(mu_bar)
+                #         print('mu_index = ', mu_index)
+                #         print('mu_bar (filter) = ', mu_bar)
+                #         print('sigma_bar = ', sigma_bar)
+                #         masses_for_plot.append(mass)
+                #         self.mus_corresponding_to_cbarmax_list.append(mu_bar)
+                #         self.sigmas_corresponding_to_cbarmax_list.append(sigma_bar)
+                #         break
+                #         # assert len(signal_pars) == len(self.table)
         # TODO: delete the part below
+        plt.figure(figsize=[15., 10.])
         with open('C3P1_DetA_DataRelease_SI.xy', 'r', encoding='UTF8', newline='') as f:
             dataset = f.readlines()
             dataset = [line.strip('\n') for line in dataset if line[0] != '#']
@@ -434,34 +449,48 @@ class Ilok(yell.SignalModel, yell.Limit):
                 print('There seems to be a problem with the calculation of cmax values.')
 
             if there_are_values_above_90 == there_are_values_below_90 == True:
-                mu_index = 0
-                for i in range(len(cmaxs_data_extremeness)):
-                    if cmaxs_data_extremeness[i] >= self.cl:
-                        mu_index = i
-                        # break
-                        mu_corresponding_to_cbarmax = self.mus[mu_index]
-                        sigma_corresponding_to_cbarmax = self._find_sigma_bar_from_mu_nonlinear_model(mu_corresponding_to_cbarmax)
-                        print('mu_index = ', mu_index)
-                        print('mu_corresponding_to_cbarmax = ', mu_corresponding_to_cbarmax)
-                        print('sigma_corresponding_to_cbarmax = ', sigma_corresponding_to_cbarmax)
-                        break
-
-                mu_index = 0
-                for i in range(len(y_filter)):
-                    if y_filter[i] >= self.cl:
-                        mu_index = i
-                        # break
-                        mu_corresponding_to_cbarmax = self.mus[mu_index]
-                        sigma_corresponding_to_cbarmax = self._find_sigma_bar_from_mu_nonlinear_model(mu_corresponding_to_cbarmax)
-                        print('mu_index = ', mu_index)
-                        print('mu_corresponding_to_cbarmax (filter) = ', mu_corresponding_to_cbarmax)
-                        print('sigma_corresponding_to_cbarmax = ', sigma_corresponding_to_cbarmax)
-                        masses_for_plot.append(mass)
-                        self.mus_corresponding_to_cbarmax_list.append(mu_corresponding_to_cbarmax)
-                        self.sigmas_corresponding_to_cbarmax_list.append(sigma_corresponding_to_cbarmax)
-                        break
-
-            # assert len(signal_pars) == len(self.table)
+                new_x = sorted(list(cmaxs_data_extremeness)+list([self.cl]))
+                y_interp = np.interp(new_x, cmaxs_data_extremeness, self.mus)
+                mu_bar = y_interp[np.intersect1d(new_x, list([self.cl]), return_indices=True)[1]][0]
+                sigma_bar = self._find_sigma_bar_from_mu_nonlinear_model(mu_bar)
+                print('mu_bar = ', mu_bar)
+                print('sigma_bar = ', sigma_bar)
+                # mu_index = 0
+                # for i in range(len(cmaxs_data_extremeness)):
+                #     if cmaxs_data_extremeness[i] >= self.cl:
+                #         mu_index = i
+                #         # break
+                #         mu_corresponding_to_cbarmax = self.mus[mu_index]
+                #         sigma_corresponding_to_cbarmax = self._find_sigma_bar_from_mu_nonlinear_model(mu_corresponding_to_cbarmax)
+                #         print('mu_index = ', mu_index)
+                #         print('mu_corresponding_to_cbarmax = ', mu_corresponding_to_cbarmax)
+                #         print('sigma_corresponding_to_cbarmax = ', sigma_corresponding_to_cbarmax)
+                #         break
+                new_x = sorted(list(y_filter)+list([self.cl]))
+                y_interp = np.interp(new_x, y_filter, self.mus)
+                mu_bar = y_interp[np.intersect1d(new_x, list([self.cl]), return_indices=True)[1]][0]
+                sigma_bar = self._find_sigma_bar_from_mu_nonlinear_model(mu_bar)
+                print('mu_bar = ', mu_bar)
+                print('sigma_bar = ', sigma_bar)
+                masses_for_plot.append(mass)
+                self.mus_corresponding_to_cbarmax_list.append(mu_bar)
+                self.sigmas_corresponding_to_cbarmax_list.append(sigma_bar)
+            #     mu_index = 0
+            #     for i in range(len(y_filter)):
+            #         if y_filter[i] >= self.cl:
+            #             mu_index = i
+            #             # break
+            #             mu_corresponding_to_cbarmax = self.mus[mu_index]
+            #             sigma_corresponding_to_cbarmax = self._find_sigma_bar_from_mu_nonlinear_model(mu_corresponding_to_cbarmax)
+            #             print('mu_index = ', mu_index)
+            #             print('mu_corresponding_to_cbarmax (filter) = ', mu_corresponding_to_cbarmax)
+            #             print('sigma_corresponding_to_cbarmax = ', sigma_corresponding_to_cbarmax)
+            #             masses_for_plot.append(mass)
+            #             self.mus_corresponding_to_cbarmax_list.append(mu_corresponding_to_cbarmax)
+            #             self.sigmas_corresponding_to_cbarmax_list.append(sigma_corresponding_to_cbarmax)
+            #             break
+            #
+            # # assert len(signal_pars) == len(self.table)
 
         print(self.masses)
         print(self.mus_corresponding_to_cbarmax_list)
@@ -559,34 +588,48 @@ class Ilok(yell.SignalModel, yell.Limit):
                 print('There seems to be a problem with the calculation of cmax values.')
 
             if there_are_values_above_90 == there_are_values_below_90 == True:
-                mu_index = 0
-                for i in range(len(cmaxs_data_extremeness)):
-                    if cmaxs_data_extremeness[i] >= self.cl:
-                        mu_index = i
-                        # break
-                        mu_corresponding_to_cbarmax = self.mus[mu_index]
-                        sigma_corresponding_to_cbarmax = self._find_sigma_bar_from_mu_linear_model(mu_corresponding_to_cbarmax)
-                        print('mu_index = ', mu_index)
-                        print('mu_corresponding_to_cbarmax = ', mu_corresponding_to_cbarmax)
-                        print('sigma_corresponding_to_cbarmax = ', sigma_corresponding_to_cbarmax)
-                        break
-
-                mu_index = 0
-                for i in range(len(y_filter)):
-                    if y_filter[i] >= self.cl:
-                        mu_index = i
-                        # break
-                        mu_corresponding_to_cbarmax = self.mus[mu_index]
-                        sigma_corresponding_to_cbarmax = self._find_sigma_bar_from_mu_linear_model(mu_corresponding_to_cbarmax)
-                        print('mu_index = ', mu_index)
-                        print('mu_corresponding_to_cbarmax (filter) = ', mu_corresponding_to_cbarmax)
-                        print('sigma_corresponding_to_cbarmax = ', sigma_corresponding_to_cbarmax)
-                        masses_for_plot.append(mass)
-                        self.mus_corresponding_to_cbarmax_list.append(mu_corresponding_to_cbarmax)
-                        self.sigmas_corresponding_to_cbarmax_list.append(sigma_corresponding_to_cbarmax)
-                        break
-
-            # assert len(signal_pars) == len(self.table)
+                new_x = sorted(list(cmaxs_data_extremeness)+list([self.cl]))
+                y_interp = np.interp(new_x, cmaxs_data_extremeness, self.mus)
+                mu_bar = y_interp[np.intersect1d(new_x, list([self.cl]), return_indices=True)[1]][0]
+                sigma_bar = self._find_sigma_bar_from_mu_linear_model(mu_bar)
+                print('mu_bar = ', mu_bar)
+                print('sigma_bar = ', sigma_bar)
+                # mu_index = 0
+                # for i in range(len(cmaxs_data_extremeness)):
+                #     if cmaxs_data_extremeness[i] >= self.cl:
+                #         mu_index = i
+                #         # break
+                #         mu_corresponding_to_cbarmax = self.mus[mu_index]
+                #         sigma_corresponding_to_cbarmax = self._find_sigma_bar_from_mu_linear_model(mu_corresponding_to_cbarmax)
+                #         print('mu_index = ', mu_index)
+                #         print('mu_corresponding_to_cbarmax = ', mu_corresponding_to_cbarmax)
+                #         print('sigma_corresponding_to_cbarmax = ', sigma_corresponding_to_cbarmax)
+                #         break
+                new_x = sorted(list(y_filter)+list([self.cl]))
+                y_interp = np.interp(new_x, y_filter, self.mus)
+                mu_bar = y_interp[np.intersect1d(new_x, list([self.cl]), return_indices=True)[1]][0]
+                sigma_bar = self._find_sigma_bar_from_mu_linear_model(mu_bar)
+                print('mu_bar = ', mu_bar)
+                print('sigma_bar = ', sigma_bar)
+                masses_for_plot.append(mass)
+                self.mus_corresponding_to_cbarmax_list.append(mu_bar)
+                self.sigmas_corresponding_to_cbarmax_list.append(sigma_bar)
+            #     mu_index = 0
+            #     for i in range(len(y_filter)):
+            #         if y_filter[i] >= self.cl:
+            #             mu_index = i
+            #             # break
+            #             mu_corresponding_to_cbarmax = self.mus[mu_index]
+            #             sigma_corresponding_to_cbarmax = self._find_sigma_bar_from_mu_linear_model(mu_corresponding_to_cbarmax)
+            #             print('mu_index = ', mu_index)
+            #             print('mu_corresponding_to_cbarmax (filter) = ', mu_corresponding_to_cbarmax)
+            #             print('sigma_corresponding_to_cbarmax = ', sigma_corresponding_to_cbarmax)
+            #             masses_for_plot.append(mass)
+            #             self.mus_corresponding_to_cbarmax_list.append(mu_corresponding_to_cbarmax)
+            #             self.sigmas_corresponding_to_cbarmax_list.append(sigma_corresponding_to_cbarmax)
+            #             break
+            #
+            # # assert len(signal_pars) == len(self.table)
 
         print(self.masses)
         print(self.mus_corresponding_to_cbarmax_list)

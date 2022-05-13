@@ -229,12 +229,15 @@ class Limit:
         :return: Corresponding cdf values to the energy values in experimental data.
         :rtype: list
         """
-        corresponding_cdf_values_to_energy = []
-        for energy_value in self.data:
-            for i in range(len(cdf[0])):
-                if cdf[0][i] - cdf[0][0] > energy_value:
-                    corresponding_cdf_values_to_energy.append(cdf[1][i-1])
-                    break
+        new_x = sorted(list(self.data)+list(cdf[0]))
+        y_interp = np.interp(new_x, cdf[0], cdf[1])
+        corresponding_cdf_values_to_energy = y_interp[np.intersect1d(new_x, self.data, return_indices=True)[1]]
+        # corresponding_cdf_values_to_energy = []
+        # for energy_value in self.data:
+        #     for i in range(len(cdf[0])):
+        #         if cdf[0][i] - cdf[0][0] > energy_value:
+        #             corresponding_cdf_values_to_energy.append(cdf[1][i-1])
+        #             break
         corresponding_cdf_values_to_energy = list(np.array(corresponding_cdf_values_to_energy)-min(corresponding_cdf_values_to_energy))
         corresponding_cdf_values_to_energy = list(np.array(corresponding_cdf_values_to_energy)/max(corresponding_cdf_values_to_energy))
         return corresponding_cdf_values_to_energy
