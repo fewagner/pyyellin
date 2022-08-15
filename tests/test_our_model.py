@@ -29,12 +29,15 @@ m_chi.append(10.)
 m_chi.sort()
 m_chi = list(dict.fromkeys(m_chi))
 m_chi = np.array(m_chi)
+# m_chi = np.array([5, 10])
 # print(m_chi)
+m_chi = [10.]
 sample_size = 10000
 materials = [[40.078, 40.078/287.914, 'Ca', 'C3P1_DetA_eff_AR_Ca.dat'],
              [183.84, 183.84/287.914, 'W', 'C3P1_DetA_eff_AR_W.dat'],
              [15.999, 15.999*4/287.914, 'O', 'C3P1_DetA_eff_AR_O.dat']]
-# materials = [[23., 23/150, 'Na'], [127., 127/150, 'I']]
+# materials = [[23., 23/150, 'Na', 'C3P1_DetA_eff_AR_Ca.dat'],
+#              [127., 127/150, 'I', 'C3P1_DetA_eff_AR_Ca.dat']]
 # m_chi = [10.]
 
 omega = yell.Ilok()
@@ -43,14 +46,17 @@ omega.set_cut_eff('C3P1_DetA_cuteff.dat')
 omega.set_masses(m_chi)
 # omega.set_sampling_size(sample_size)  # Optional, only needed for rvs functions
 omega.set_sigma_interval(1e-6, 1e-2)
-omega.set_mu_interval(0.25, 50)
+# omega.set_sigma_interval(1, 1)
+omega.set_mu_interval(0.25, 100)
 # i_want_list = omega.calculate_items()
+# print(i_want_list[-1])
 # print(i_want_list[0])
 # table6 with omega.set_mu_interval(0.25, 250) and omega.set_table_variables(True, 2500, 'table6') -> 1.7 GB
 omega.set_confidence_level(0.9)
 omega.get_data('C3P1_DetA_AR.dat')
-omega.set_table_variables(False, 100, 'table')
+omega.set_table_variables(False, 500, 'table')
 omega.get_limit()
+
 #
 # print(i_want_list)
 # print(i_want_list[list(m_chi).index(10.)])
@@ -63,39 +69,39 @@ omega.get_limit()
 # na = [float(i[1]) for i in line]
 # iod = [float(i[2]) for i in line]
 # nai = [float(i[3]) for i in line]
-#
+# #
 # plt.yscale("log")
 # # plt.xlim(0, 40)
 # # plt.ylim(10**(-12), 10**0)
 # plt.plot(energy, na, label='na')
 # plt.plot(energy, iod, label='iod')
-# plt.plot(energy, nai, label='nai')
+# # plt.plot(energy, nai, label='nai')
 # for material_index in range(len(materials)):
-#     plt.plot(i_want_list[list(m_chi).index(10.)][0][0], i_want_list[list(m_chi).index(10.)][0][1][material_index],
+#     plt.plot(i_want_list[list(m_chi).index(10.)][0][0], np.array(i_want_list[list(m_chi).index(10.)][0][1][material_index])*omega.normalization_list[material_index],
 #              label=f'pdf_{materials[material_index]}')
 # plt.legend()
 # plt.show()
-#
+# # #
 # plt.yscale('log')
 # # plt.xlim(0, 40)
 # # plt.ylim(10**(-12), 10**0)
-# plt.plot(energy, na, label='na')
-# plt.plot(energy, iod, label='iod')
+# # plt.plot(energy, na, label='na')
+# # plt.plot(energy, iod, label='iod')
 # plt.plot(energy, nai, label='nai')
-# plt.plot(i_want_list[list(m_chi).index(10.)][3][0], i_want_list[list(m_chi).index(10.)][3][1], label='pdf_sum')
+# plt.plot(i_want_list[list(m_chi).index(10.)][3][0], np.array(i_want_list[list(m_chi).index(10.)][3][1])*omega.pdf_sum_normalization_factor, label='pdf_sum')
 # plt.legend()
 # plt.show()
-#
-# plt.yscale("log")
-# # plt.xlim(0, 40)
-# # plt.ylim(10**(-12), 10**0)
-# plt.plot(energy, na, label='na')
-# plt.plot(energy, iod, label='iod')
-# plt.plot(energy, nai, label='nai')
-# plt.plot(i_want_list[list(m_chi).index(10.)][6][0], i_want_list[list(m_chi).index(10.)][6][1], label='pdf_sum_convoluted')
-# plt.legend()
-# plt.show()
-#
+# #
+# # plt.yscale("log")
+# # # plt.xlim(0, 40)
+# # # plt.ylim(10**(-12), 10**0)
+# # plt.plot(energy, na, label='na')
+# # plt.plot(energy, iod, label='iod')
+# # plt.plot(energy, nai, label='nai')
+# # plt.plot(i_want_list[list(m_chi).index(10.)][6][0], i_want_list[list(m_chi).index(10.)][6][1], label='pdf_sum_convoluted')
+# # plt.legend()
+# # plt.show()
+# #
 stop = timeit.default_timer()
 print('Time: ', stop - start)
 

@@ -213,6 +213,7 @@ class Ilok(yell.SignalModel, yell.Limit):
 
         :return: None
         """
+        self.data = np.array([element for element in self.data if element >= self.threshold if element <= self.upper_integral_limit])
         if exists('k_distributions_table_3d_{}.json'.format(self.table_file_name)) and \
                 exists('gamma_max_table_2d_{}.json'.format(self.table_file_name)) and \
                 (not self.make_table_bool) is True:
@@ -232,6 +233,50 @@ class Ilok(yell.SignalModel, yell.Limit):
                 f.write(json.dumps(k_distributions_table_3d))
             with open('gamma_max_table_2d_{}.json'.format(self.table_file_name), "w") as f:
                 f.write(json.dumps(gamma_max_table_2d))
+
+        # TODO: delete code for plots
+        # import matplotlib as mpl
+        # mpl.rcParams['text.usetex'] = True
+        # fig, ax = plt.subplots(1, 4, figsize=(16, 3.75), sharey=True)
+        # for i, j in enumerate([500, 633, 766, 900]):
+        #     ax[i].hist(gamma_max_table_2d[j], bins=25, density=True, cumulative=False)
+        #     ax[i].set_xlim(0, 1)
+        #     ax[i].set_xlabel(r'$\Gamma_{Max}$-values')
+        #     ax[i].set_ylabel(r'Frequency')
+        #     ax[i].set_title(r'$\Gamma_{Max}$-values '+f'for $\mu = {np.round(self.mus[j], 2)}$')
+        #     ax[i].set_xticks(np.arange(0, 1.1, 0.1))
+        #     ax[i].set_yticks([])
+        # plt.tight_layout()
+        # plt.savefig('hist_gamma.png', dpi=600)
+        # plt.show()
+        # # # # for i in range(900, 910):
+        # # # #     plt.hist(gamma_max_table_2d[i], bins=75)
+        # # # #     plt.show()
+        # # fig, ax = plt.subplots(1, 4, figsize=(16, 3.75), sharey=True)
+        # # for i, j in enumerate([0, 3, 6, 9]):
+        # #     ax[i].hist(k_distributions_table_3d[900][j], bins=50, density=True, cumulative=False)
+        # #     ax[i].set_xlim(0, 1)
+        # #     ax[i].set_xlabel(r'$x$-values')
+        # #     ax[i].set_ylabel(r'Frequency')
+        # #     ax[i].set_title(f'$x$-values for $k = {j}$')
+        # #     ax[i].set_xticks(np.arange(0, 1.1, 0.1))
+        # #     ax[i].set_yticks([])
+        # # plt.tight_layout()
+        # # # plt.savefig('hist_x.png', dpi=600)
+        # # plt.show()
+        # #     # plt.figure(figsize=(4, 2.5*1.5))
+        # #     # plt.hist(k_distributions_table_3d[900][i], bins=50, density=True, cumulative=False)
+        # #     # plt.xlim(0, 1)
+        # #     # # plt.ylim(0, 1)
+        # #     # plt.xlabel(r'$x$-values')
+        # #     # plt.ylabel(r'Frequency')
+        # #     # plt.title(f'$x$-values for $k = {i}$')
+        # #     # plt.xticks(np.arange(0, 1.1, 0.1))
+        # #     # plt.yticks([])
+        # #     # plt.tight_layout()
+        # #     # # plt.savefig('cbarmax.png', dpi=300)
+        # #     # plt.show()
+        # exit()
 
         c_90percent_list = []
         c_90percent_list_2 = []
@@ -376,6 +421,7 @@ class Ilok(yell.SignalModel, yell.Limit):
 
         :return: None
         """
+        self.data = np.array([element for element in self.data if element >= self.threshold if element <= self.upper_integral_limit])
         if exists('k_distributions_table_3d_{}.json'.format(self.table_file_name)) and \
                 exists('gamma_max_table_2d_{}.json'.format(self.table_file_name)) and \
                 (not self.make_table_bool) is True:
@@ -515,6 +561,7 @@ class Ilok(yell.SignalModel, yell.Limit):
 
         :return: None
         """
+        self.data = np.array([element for element in self.data if element >= self.threshold if element <= self.upper_integral_limit])
         if exists('k_distributions_table_3d_{}.json'.format(self.table_file_name)) and \
                 exists('gamma_max_table_2d_{}.json'.format(self.table_file_name)) and \
                 (not self.make_table_bool) is True:

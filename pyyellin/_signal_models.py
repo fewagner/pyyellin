@@ -28,16 +28,18 @@ class SignalModel:
         self.RHO_X = 0.3e3*self.METERS_TO_EV**3  # density [keV^4/(c^5*hbar^3)]
         self.M_P = const.physical_constants["proton mass energy equivalent in MeV"][0]*10**3  # proton mass [keV/c^2]  # TODO: amu in GeV/c^2 oder mp passt
         self.S = 1e-15/self.METERS_TO_EV*1e3  # skin thickness [c*hbar/keV]
-        self.V_ESC = 554000./const.c  # escape velocity [c]
+        self.V_ESC = 550000./const.c  # escape velocity [c]
         self.W = 270000./const.c  # root mean square velocity of the DM particles [c]
         self.V_EARTH = 220*1.05e3/const.c  # earth velocity [c]
         self.F_A = .52e-15/self.METERS_TO_EV*1e3  # factor for nuclear radius r_0 [c*hbar/keV]
         self.F_S = .9e-15/self.METERS_TO_EV*1e3  # factor for nuclear radius r_0 [c*hbar/keV]
+        print(self.METERS_TO_EV, self.DIMENSION_FACTOR, self.RHO_X, self.M_P, self.S, self.V_ESC, self.W, self.V_EARTH, self.F_A, self.F_S)
         self.exposure = 0.
         self.resolution = 0.
         self.threshold = 0.
         self.upper_integral_limit = 0.
         self.energy_grid_step_size = 0.0005
+        self.energy_grid_upper_bound = 0.
         self.materials = []
         self.pdf_sum_normalization_factor = 1.
         self.pdf_sum_convoluted_normalization_factor = 1.
@@ -47,7 +49,8 @@ class SignalModel:
         self.energy_grid = []
 
     def set_detector(self, exposure: float, resolution: float, threshold: float, materials: list,
-                     upper_integral_limit: float, energy_grid_step_size: float = 0.0005):
+                     upper_integral_limit: float, energy_grid_step_size: float = 0.0005,
+                     energy_grid_upper_bound: float = 1000.):
         """
         Set various parameters of the detector.
 
@@ -57,6 +60,7 @@ class SignalModel:
         :param materials: List of materials with the information: mass, percentile mass in the molecule, element name
         :param upper_integral_limit: Upper integral limit, energy range restriction [keV]
         :param energy_grid_step_size: Step size for the energy grid [keV]
+        :param energy_grid_upper_bound: Upper bound for energy grid. [keV]
         :return: None
         """
 
@@ -67,6 +71,7 @@ class SignalModel:
         self.upper_integral_limit = upper_integral_limit
         self.energy_grid_step_size = energy_grid_step_size
         # self.energy_grid = np.arange(threshold-3*resolution, upper_integral_limit+3*resolution, energy_grid_step_size)
+        self.energy_grid_upper_bound = energy_grid_upper_bound
         self._set_material_AR_eff()
         return
 
@@ -84,7 +89,7 @@ class SignalModel:
 
         energies_x_min_3 = []
         for element in self.materials:
-            energy_grid_mock = np.arange(self.threshold-3*self.resolution, 1000, 0.05)
+            energy_grid_mock = np.arange(self.threshold-3*self.resolution, self.energy_grid_upper_bound, 0.05)
             A = element[0]
             M_N = A*self.M_P
             m_chi = np.copy(pars)*1e6
@@ -99,26 +104,33 @@ class SignalModel:
         print('max(energies_x_min_3):', max(energies_x_min_3))
         if max(energies_x_min_3) < 1:
             max_energy = 1.
+        elif max(energies_x_min_3) >= self.energy_grid_upper_bound:
+            max_energy = self.energy_grid_upper_bound
         else:
             max_energy = max(energies_x_min_3)
         self.energy_grid = np.arange(self.threshold-3*self.resolution, max_energy, self.energy_grid_step_size)
+        # self.energy_grid = np.arange(self.threshold-3*self.resolution, 200, self.energy_grid_step_size)
 
+        f_s = []  # TODO: REMOVE AFTER PLOT
         for element in self.materials:
             A = element[0]
-            M_N = A*self.M_P  # nucleon mass [keV/c^2]
+            M_N = A*self.M_P  # nucleus mass [keV/c^2]
             F_C = (1.23*A**(1./3.)-.6)*1e-15/self.METERS_TO_EV*1e3  # factor for nuclear radius r_0 [c*hbar/keV]
             m_chi = np.copy(pars)*1e6  # DM mass [keV/c^2]
             mu_p = self.M_P*m_chi/(self.M_P+m_chi)  # reduced mass with proton mass [keV/c^2]
-            mu_N = M_N*m_chi/(M_N+m_chi)  # reduced mass with nucleon mass [keV/c^2]
+            mu_N = M_N*m_chi/(M_N+m_chi)  # reduced mass with nucleus mass [keV/c^2]
             z = np.sqrt(3/2)*self.V_ESC/self.W  # factor needed for normalization
-            n = erf(z) - 2/np.sqrt(np.pi)*z*np.exp(-z**2)  # normalization factor for the analytical solution of the integral
+            n = erf(z)-2/np.sqrt(np.pi)*z*np.exp(-z**2)  # normalization factor for the analytical solution of the integral
             r_0 = np.sqrt((F_C**2)+7./3.*(np.pi**2)*(self.F_A**2)-5.*(self.F_S**2))  # nuclear radius [c*hbar/keV]
             eta = np.sqrt(3/2)*self.V_EARTH/self.W  # factor needed for the analytical solution of the integral
 
             q = np.sqrt(2 * M_N * self.energy_grid)  # momentum transferred in the scattering process [keV/c])
             spherical_bessel_j1 = (np.sin(q*r_0)/(q*r_0)**2)-(np.cos(q*r_0)/(q*r_0))
+            # f_s.append(spherical_bessel_j1)
+            # print(A, M_N, F_C, m_chi, mu_p, mu_N, z, n, r_0, eta, q, spherical_bessel_j1, spherical_bessel_j1/(q*r_0), self.S, -0.5*q*q*self.S*self.S, np.exp(-0.5*q*q*self.S*self.S))
             f = 3.*spherical_bessel_j1/(q*r_0)*np.exp(-0.5*q*q*self.S*self.S)
-            v_min = np.sqrt(self.energy_grid * M_N / (2 * mu_N ** 2))  # lowest speed of WIMP that can induce a nuclear recoil of E_R [c]
+            f_s.append(f*f)  # TODO: REMOVE AFTER PLOT
+            v_min = np.sqrt(self.energy_grid*M_N/(2*mu_N**2))  # lowest speed of WIMP that can induce a nuclear recoil of E_R [c]
             x_min = np.sqrt(3*v_min**2/(2*self.W**2))  # factor needed for the analytical solution of the integral
             x_min_1, x_min_2, x_min_3 = [], [], []
             for item in x_min:
@@ -135,12 +147,28 @@ class SignalModel:
             integral *= 1/(n*eta)*np.sqrt(3/(2*np.pi*self.W**2))
             rates_per_energy = self.RHO_X/(2.*mu_p**2*m_chi)*A**2*f**2*integral  # total interaction rate R per energy E [c^2/(hbar*keV)] per sigma [pbarn]
             rates_per_energy *= self.DIMENSION_FACTOR
-            rates_per_energy = rates_per_energy*self.cut_eff[:len(rates_per_energy)]
+            rates_per_energy = self.convolve_pdf(rates_per_energy)
+            # rates_per_energy = rates_per_energy*self.cut_eff[:len(rates_per_energy)]
             rates_per_energy = rates_per_energy*self.material_AR_eff[list(self.materials).index(element)][:len(rates_per_energy)]
             normalization = integrate.trapz(rates_per_energy, self.energy_grid)  # normalization factor of the pdf
             rates_per_energy = rates_per_energy/normalization  # normalized pdf
             rates_per_energy_list.append(rates_per_energy)
             self.normalization_list.append(normalization)
+
+        #### Code for form factor plot ####
+        for i, f2 in enumerate(f_s):
+            plt.plot(self.energy_grid, f2, label=f'{self.materials[i][2]}')
+        # plt.rcParams.update({'mathtext.default': 'regular'})
+        plt.yscale('log')
+        plt.ylim(10**(-6), 1)
+        plt.xlim(0, 200)
+        plt.xlabel('$E_R [keV]$')
+        plt.ylabel('$F^2(E)$')
+        plt.grid(which='both', linestyle='dotted')
+        plt.legend()
+        plt.tight_layout()
+        # plt.savefig('formfactor.png', dpi=300, pad_inches=0.05)
+        plt.show()
 
         return self.energy_grid, rates_per_energy_list
 
@@ -316,12 +344,12 @@ class SignalModel:
             dataset = [line.split('\t') for line in dataset if line[0] != '#']
         self.cut_eff.append([float(number[0]) for number in dataset])
         self.cut_eff.append([float(number[1]) for number in dataset])
-        energy_grid = np.arange(self.threshold-3*self.resolution, 1000, self.energy_grid_step_size)
+        energy_grid = np.arange(self.threshold-3*self.resolution, self.energy_grid_upper_bound, self.energy_grid_step_size)
         y_interp = np.interp(energy_grid, self.cut_eff[0], self.cut_eff[1])
         self.cut_eff = np.copy(y_interp)
         return
 
-    def pdf_sum_convolution(self, pdf_sum):
+    def pdf_sum_convolution(self, pdf_sum):  # TODO: refactor function, multiply with cut eff
         """
         Calculate the convolution of the summed pdf in order to take into account the finite energy resolution.
 
@@ -329,12 +357,27 @@ class SignalModel:
         :return: Energy grid and the summed and convoluted pdf.
         :rtype: list
         """
+        # gauss_x = np.arange(-10*self.resolution, 10*self.resolution, 0.0005)  # 10 sigma Bereich, 0.5 eV steps
+        # gauss = norm.pdf(gauss_x, scale=self.resolution)
+        # pdf_sum_convoluted = np.convolve(pdf_sum[1]*self.pdf_sum_normalization_factor, gauss, mode='same')/np.sum(gauss)
+        # self.pdf_sum_convoluted_normalization_factor = integrate.trapz(pdf_sum[1], self.energy_grid)  # normalization factor of the pdf
+        # pdf_sum_convoluted = pdf_sum_convoluted/self.pdf_sum_convoluted_normalization_factor  # normalized pdf
+        pdf_sum_convoluted = pdf_sum[1]*self.cut_eff[:len(self.energy_grid)]*self.pdf_sum_normalization_factor
+        self.pdf_sum_convoluted_normalization_factor = integrate.trapz(pdf_sum_convoluted, self.energy_grid)
+        pdf_sum_convoluted = pdf_sum_convoluted/self.pdf_sum_convoluted_normalization_factor
+        return self.energy_grid, pdf_sum_convoluted
+
+    def convolve_pdf(self, pdf):
+        """
+        Calculate the convolution of the pdf with a gaussian function in order to take into account the finite energy resolution.
+        :param pdf: The probability density function.
+        :return: Convolved pdf.
+        """
         gauss_x = np.arange(-10*self.resolution, 10*self.resolution, 0.0005)  # 10 sigma Bereich, 0.5 eV steps
         gauss = norm.pdf(gauss_x, scale=self.resolution)
-        pdf_sum_convoluted = np.convolve(pdf_sum[1]*self.pdf_sum_normalization_factor, gauss, mode='same')/np.sum(gauss)
-        self.pdf_sum_convoluted_normalization_factor = integrate.trapz(pdf_sum[1], self.energy_grid)  # normalization factor of the pdf
-        pdf_sum_convoluted = pdf_sum_convoluted/self.pdf_sum_convoluted_normalization_factor  # normalized pdf
-        return self.energy_grid, pdf_sum_convoluted
+        convolved_pdf = np.convolve(pdf, gauss, mode='same')/np.sum(gauss)
+
+        return convolved_pdf
 
     def _set_material_AR_eff(self):
         """
@@ -352,12 +395,8 @@ class SignalModel:
                 dataset = [line.split('\t') for line in dataset if line[0] != '#']
             x_axis.append([float(number[0]) for number in dataset])
             y_axis.append([float(number[1]) for number in dataset])
-            energy_grid = np.arange(self.threshold-3*self.resolution, 1000, self.energy_grid_step_size)
+            energy_grid = np.arange(self.threshold-3*self.resolution, self.energy_grid_upper_bound, self.energy_grid_step_size)
             y_interp = np.interp(energy_grid, x_axis[0], y_axis[0])
-            plt.plot(energy_grid, y_interp)
-            plt.title(f'{self.materials[i][2]}')
-            plt.xlim([0, 30])
-            plt.show()
             self.material_AR_eff.append(y_interp)
         return
 
