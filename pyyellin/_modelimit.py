@@ -193,7 +193,7 @@ class ModeLimit(yell.SignalModel, yell.Limit):
                 self.mus_corresponding_to_cbarmax_list_mg_sm.append(self.mus_from_cdf[index])
                 self.sigmas_corresponding_to_cbarmax_list_mg_sm.append(self.sigmas[index])
 
-        with open(Path(str(self.results_path) + '/' + 'maximum_gap_limits.dat'), 'w') as dat_file:
+        with open(Path(str(self.results_path) + '/' + 'maximum_gap_limits_sm.dat'), 'w') as dat_file:
             dat_file.write("# Calculated limits using Yellin's optimum interval method.\n# Mass in GeV (left), cross"
                            "sections in pb (center), expected number of events (right).\n")
             for mass, sigma, mu in zip(self.masses_for_plot_mg_sm, self.sigmas_corresponding_to_cbarmax_list_mg_sm, self.mus_corresponding_to_cbarmax_list_mg_sm):
@@ -286,7 +286,7 @@ class ModeLimit(yell.SignalModel, yell.Limit):
                 self.masses_for_plot_oi_sm.append(mass)
                 self.mus_corresponding_to_cbarmax_list_oi_sm.append(mu_bar)
                 self.sigmas_corresponding_to_cbarmax_list_oi_sm.append(sigma_bar)
-        with open(Path(str(self.results_path) + '/' + 'optimum_interval_limits.dat'), 'w') as dat_file:
+        with open(Path(str(self.results_path) + '/' + 'optimum_interval_limits_sm.dat'), 'w') as dat_file:
             dat_file.write("# Calculated limits using Yellin's optimum interval method.\n# Mass in GeV (left), cross"
                            "sections in pb (center), expected number of events (right).\n")
             for mass, sigma, mu in zip(self.masses_for_plot_oi_sm, self.sigmas_corresponding_to_cbarmax_list_oi_sm, self.mus_corresponding_to_cbarmax_list_oi_sm):
@@ -507,7 +507,7 @@ class ModeLimit(yell.SignalModel, yell.Limit):
                 self.masses_for_plot_oi_am.append(mass)
                 self.mus_corresponding_to_cbarmax_list_oi_am.append(mu_bar)
                 self.sigmas_corresponding_to_cbarmax_list_oi_am.append(sigma_bar)
-        with open(Path(str(self.results_path) + '/' + 'optimum_interval_limits.dat'), 'w') as dat_file:
+        with open(Path(str(self.results_path) + '/' + 'optimum_interval_limits_am.dat'), 'w') as dat_file:
             dat_file.write("# Calculated limits using Yellin's optimum interval method.\n# Mass in GeV (left), cross"
                            "sections in pb (center), expected number of events (right).\n")
             for mass, sigma, mu in zip(self.masses_for_plot_oi_am, self.sigmas_corresponding_to_cbarmax_list_oi_am, self.mus_corresponding_to_cbarmax_list_oi_am):
