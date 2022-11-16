@@ -1,6 +1,7 @@
-import numpy as np
 import csv
+import numpy as np
 import pandas as pd
+from pathlib import Path
 from scipy.stats import percentileofscore
 
 
@@ -13,6 +14,7 @@ class Limit:
         self.cl = 0.
         self.data = []
         self.corresponding_cdf = []
+        self.tables_path = ''
         self.table = []
         self.sigmas = []
         self.mus = []
@@ -45,7 +47,6 @@ class Limit:
         with open(file_name, 'r', encoding='UTF8', newline='') as f:
             dataset = f.readlines()
             dataset = [float(line.strip('\n')) for line in dataset if line[0] != '#']
-        # dataset += [0.0301-3*0.0046, 16.]  # TODO: Testing something, what if we add the min max values of possible upper and lower bounds for cdf here instead of in _get_corresponding_cdf_values
         dataset.sort()
         self.data = dataset
         return
@@ -65,9 +66,8 @@ class Limit:
             for mu in self.mus:
                 size_of_uniform_array = np.random.poisson(mu, number_of_lists)
                 uniform_array = [[0.] + list(np.random.rand(size_of_uniform_array[i])) + [1.] for i in range(number_of_lists)]
-                # uniform_array = [list(np.random.rand(size_of_uniform_array[i])) for i in range(number_of_lists)]  # TODO: same reasoning as above, Pois(mu+2)
                 uniform_arrays.append(uniform_array)
-            with open(file_name + '.csv', 'w', encoding='UTF8', newline='') as f:
+            with open(Path(str(Path(str(self.tables_path) + '/' + file_name)) + '.csv'), 'w', encoding='UTF8', newline='') as f:
                 writer = csv.writer(f, delimiter=' ')
                 for mu in uniform_arrays:
                     for n in mu:
@@ -100,7 +100,7 @@ class Limit:
         :rtype: float
         """
         energy_array = np.sort(energy_array)
-        maximum_gap = max([energy_array[i+1]-energy_array[i] for i in range(len(energy_array)-1)])
+        maximum_gap = np.max(energy_array[1:]-energy_array[:-1])
         return maximum_gap
 
     @staticmethod

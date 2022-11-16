@@ -1,8 +1,8 @@
 
 from ._limit import Limit
 from ._signal_models import SignalModel
-from ._ilok import Ilok
+from ._modelimit import ModeLimit
 
 __all__ = ['Limit',
            'SignalModel',
-           'Ilok']
+           'ModeLimit']

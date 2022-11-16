@@ -1,9 +1,9 @@
 import random
 import numpy as np
 from scipy import integrate
-from scipy import constants as const
-from scipy.special import erf
 from scipy.stats import norm
+from scipy.special import erf
+from scipy import constants as const
 
 
 class SignalModel:
@@ -28,16 +28,15 @@ class SignalModel:
         Here global parameters for the signal model can be fixed. E.g. the escape velocity, ...
         """
         self.METERS_TO_EV = const.hbar*const.c/const.e  # conversion factor to convert meters in c*hbar/eV
-        self.DIMENSION_FACTOR = (const.e*10**19)**2*86400*10**30/(const.hbar*10**34)**3  # TODO: dimension ???
+        self.DIMENSION_FACTOR = (const.e*10**19)**2*86400*10**30/(const.hbar*10**34)**3
         self.RHO_X = 0.3e3*self.METERS_TO_EV**3  # density [keV^4/(c^5*hbar^3)]
-        self.M_P = const.physical_constants["proton mass energy equivalent in MeV"][0]*10**3  # proton mass [keV/c^2]  # TODO: amu in GeV/c^2 oder mp passt
+        self.M_P = const.physical_constants["proton mass energy equivalent in MeV"][0]*10**3  # proton mass [keV/c^2]
         self.S = 1e-15/self.METERS_TO_EV*1e3  # skin thickness [c*hbar/keV]
         self.V_ESC = 550000./const.c  # escape velocity [c]
         self.W = 270000./const.c  # root mean square velocity of the DM particles [c]
         self.V_EARTH = 220*1.05e3/const.c  # earth velocity [c]
         self.F_A = .52e-15/self.METERS_TO_EV*1e3  # factor for nuclear radius r_0 [c*hbar/keV]
         self.F_S = .9e-15/self.METERS_TO_EV*1e3  # factor for nuclear radius r_0 [c*hbar/keV]
-        print(self.METERS_TO_EV, self.DIMENSION_FACTOR, self.RHO_X, self.M_P, self.S, self.V_ESC, self.W, self.V_EARTH, self.F_A, self.F_S)
         self.exposure = 0.
         self.resolution = 0.
         self.threshold = 0.
@@ -69,7 +68,7 @@ class SignalModel:
         """
 
         self.exposure = exposure
-        self.resolution = resolution  # scale (sigma) von gauss
+        self.resolution = resolution
         self.threshold = threshold
         self.materials = materials
         self.upper_integral_limit = upper_integral_limit
@@ -103,10 +102,26 @@ class SignalModel:
         """
         Set cut efficiency.
 
-        :param file_name: File path and name.
+        :param file_name: File path and name. If set to 1, then cut efficiency will be set to a list consisting of ones.
         :return: None
         """
-        if type(file_name) == str:
+        # if type(file_name) == str:
+        #     with open(file_name, 'r', encoding='UTF8', newline='') as f:
+        #         dataset = f.readlines()
+        #         dataset = [line.strip('\n') for line in dataset if line[0] != '#']
+        #         dataset = [line.split('\t') for line in dataset if line[0] != '#']
+        #     self.cut_eff.append([float(number[0]) for number in dataset])
+        #     self.cut_eff.append([float(number[1]) for number in dataset])
+        #     energy_grid = np.arange(self.threshold-3*self.resolution, self.energy_grid_upper_bound, self.energy_grid_step_size)
+        #     y_interp = np.interp(energy_grid, self.cut_eff[0], self.cut_eff[1])
+        #     self.cut_eff = np.copy(y_interp)
+        # elif file_name == 1:
+        #     self.cut_eff = [1 for i in range(len(np.arange(self.threshold-3*self.resolution, self.energy_grid_upper_bound, self.energy_grid_step_size)))]
+        # else:
+        #     print('Parameter should either be the file name in string format or the integer 1.')
+        if file_name == 1:
+            self.cut_eff = [1 for i in range(len(np.arange(self.threshold-3*self.resolution, self.energy_grid_upper_bound, self.energy_grid_step_size)))]
+        else:
             with open(file_name, 'r', encoding='UTF8', newline='') as f:
                 dataset = f.readlines()
                 dataset = [line.strip('\n') for line in dataset if line[0] != '#']
@@ -116,10 +131,6 @@ class SignalModel:
             energy_grid = np.arange(self.threshold-3*self.resolution, self.energy_grid_upper_bound, self.energy_grid_step_size)
             y_interp = np.interp(energy_grid, self.cut_eff[0], self.cut_eff[1])
             self.cut_eff = np.copy(y_interp)
-        elif file_name == 1:
-            self.cut_eff = [1 for i in range(len(np.arange(self.threshold-3*self.resolution, self.energy_grid_upper_bound, self.energy_grid_step_size)))]
-        else:
-            print('Parameter should either be the file name in string format or the integer 1.')
         return
 
     def convolve_pdf(self, pdf):
@@ -128,7 +139,7 @@ class SignalModel:
         :param pdf: The probability density function.
         :return: Convolved pdf.
         """
-        gauss_x = np.arange(-10*self.resolution, 10*self.resolution, 0.0005)  # 10 sigma Bereich, 0.5 eV steps
+        gauss_x = np.arange(-10*self.resolution, 10*self.resolution, 0.0005)
         if len(gauss_x) >= len(pdf):
             gauss_x = np.linspace(-10*self.resolution, 10*self.resolution, len(pdf)-2)
         gauss = norm.pdf(gauss_x, scale=self.resolution)
@@ -174,12 +185,6 @@ class SignalModel:
         for element in self.materials:
             A = element[0]
             M_N = A * self.M_P
-            # if element[2] == 'W':
-            #     self.F_A = .535e-15/self.METERS_TO_EV*1e3
-            #     F_C = 6.51e-15/self.METERS_TO_EV*1e3
-            # else:
-            #     self.F_A = .52e-15/self.METERS_TO_EV*1e3
-            #     F_C = (1.23*A**(1./3.)-.6)*1e-15/self.METERS_TO_EV*1e3
             F_C = (1.23*A**(1./3.)-.6)*1e-15/self.METERS_TO_EV*1e3
             m_chi = np.copy(pars)*1e6
             mu_p = self.M_P*m_chi/(self.M_P+m_chi)
@@ -190,13 +195,6 @@ class SignalModel:
             eta = np.sqrt(3/2)*self.V_EARTH/self.W
             q = np.sqrt(2 * M_N * self.energy_grid)
             spherical_bessel_j1 = (np.sin(q*r_0)/(q*r_0)**2)-(np.cos(q*r_0)/(q*r_0))
-            # if element[2] in ['Ca', 'O']:
-            #     f_1 = np.sum([((-1)**v*self.av_dict[element[2]][v])/(v**2*np.pi**2-q**2*self.R_Ca_O**2) for v in self.av_dict[element[2]].keys()], 0)
-            #     f_2 = np.sum([((-1)**v*self.av_dict[element[2]][v])/(v**2*np.pi**2) for v in self.av_dict[element[2]].keys()])
-            #     f = np.sin(q*self.R_Ca_O)/(q*self.R_Ca_O)*f_1/f_2
-            # else:
-            #     f = 3.*spherical_bessel_j1/(q*r_0)*np.exp(-0.5*q*q*self.S*self.S)
-            # f = np.array([1 for i in range(len(f))])  # TODO: Testing stuff
             f = 3.*spherical_bessel_j1/(q*r_0)*np.exp(-0.5*q*q*self.S*self.S)
             v_min = np.sqrt(self.energy_grid*M_N/(2*mu_N**2))
             x_min = np.array(np.sqrt(3/2)*v_min/self.W)
@@ -214,7 +212,7 @@ class SignalModel:
             rates_per_energy = rates_per_energy*self.material_AR_eff[list(self.materials).index(element)][:len(rates_per_energy)]
             normalization = integrate.trapz(rates_per_energy, self.energy_grid)
             if normalization != 0:
-                rates_per_energy = rates_per_energy/normalization  # TODO: maybe x[np.isnan(x)]=0 here as a solution to nansum
+                rates_per_energy = rates_per_energy/normalization
             rates_per_energy_list.append(rates_per_energy)
             self.normalization_list[pars][element[2]] = normalization
         return self.energy_grid, rates_per_energy_list
@@ -231,13 +229,9 @@ class SignalModel:
         """
         pdf_sum = np.zeros(np.shape(pdf[0])[0])
         for i in range(len(pdf[1])):
-            # pdf_sum = pdf_sum + pdf[1][i]*materials[i][1]*self.normalization_list[mass][materials[i][2]]
             pdf_sum = np.nansum([pdf_sum, pdf[1][i]*materials[i][1]*self.normalization_list[mass][materials[i][2]]], axis=0)
         self.pdf_sum_normalization_factor[mass] = integrate.trapz(pdf_sum, self.energy_grid)
         pdf_sum = pdf_sum/self.pdf_sum_normalization_factor[mass]
-        # plt.plot(self.energy_grid, pdf_sum)
-        # plt.yscale('log')
-        # plt.show()
         return pdf[0], pdf_sum
 
     @staticmethod
@@ -268,7 +262,6 @@ class SignalModel:
         pdf_sum_limited_x = pdf_sum[0][np.logical_and(pdf_sum[0] > self.threshold, pdf_sum[0] < self.upper_integral_limit)]
         pdf_sum_limited_y = pdf[np.logical_and(pdf_sum[0] > self.threshold, pdf_sum[0] < self.upper_integral_limit)]
         mus = integrate.trapz(pdf_sum_limited_y, pdf_sum_limited_x)*np.array(sigmas)*self.pdf_sum_normalization_factor[mass]*self.exposure
-        # print('mus:', mus)
         return mus
 
     ### Additional Functions ###
@@ -286,13 +279,9 @@ class SignalModel:
         pdf = self.pdf(mass*1e6)
         pdf_sum = np.zeros(np.shape(pdf[0])[0])
         for i in range(len(pdf[1])):
-            # pdf_sum = pdf_sum + pdf[1][i]*materials[i][1]*self.normalization_list[mass][materials[i][2]]
             pdf_sum = np.nansum([pdf_sum, pdf[1][i]*materials[i][1]*self.normalization_list[mass][materials[i][2]]], axis=0)
         self.pdf_sum_normalization_factor[mass] = integrate.trapz(pdf_sum, self.energy_grid)
         pdf_sum = pdf_sum/self.pdf_sum_normalization_factor[mass]
-        # plt.plot(self.energy_grid, pdf_sum)
-        # plt.yscale('log')
-        # plt.show()
         return pdf[0], pdf_sum
 
     def cdf(self, pars: float):
@@ -303,7 +292,7 @@ class SignalModel:
         :return: The energy grid and the cumulative density functions evaluated on the grid.
         :rtype: list
         """
-        m_chi = np.copy(pars)*1e6  # DM mass [keV/c^2]
+        m_chi = np.copy(pars)*1e6
         pdf = self.pdf(m_chi)
         cdf = np.zeros((np.shape(self.materials)[0], np.shape(pdf[0])[0]))
         for j in range(len(self.materials)):

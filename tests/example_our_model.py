@@ -31,7 +31,3 @@ print(vars(omega).keys())  # Callable variables.
 stop = timeit.default_timer()
 print('Time: ', stop - start)
 
-# # print('thr = 0.0301 and res = 0.0046:')  # Optional
-# # print('min DM mass in GeV = ', omega._find_dm_min(materials))
-# # TODO: ist aber dieser dm_min nicht für WIMP Modell? Vielleict mass range einfach dem User überlassen ->
-# #  andere Modells, und dann diese Funktion als zusätlicher Tool lassen, falls man die min Masse braucht im WIMP modell
