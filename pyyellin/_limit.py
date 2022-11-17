@@ -37,7 +37,7 @@ class Limit:
         self.cl = cl
         return
 
-    def get_data(self, file_name: str):
+    def get_data(self, file_name):
         """
         Read experiment data and save it into a list. All lines starting with '#' will be ignored.
 
