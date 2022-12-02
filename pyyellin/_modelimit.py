@@ -201,7 +201,7 @@ class ModeLimit(yell.SignalModel, yell.Limit):
                 dat_file.write(f'{mass}  {sigma}  {mu}\n')
         return
 
-    def get_limit(self):
+    def get_limit_optimum_interval(self):
         """
         Calculate the limit for the cross-section of dark matter particles using Yellin's optimum interval method.
 
@@ -355,8 +355,8 @@ class ModeLimit(yell.SignalModel, yell.Limit):
         sigma_bar = sigma_interp_list[new_mus_list.index(mu_bar)]
         return sigma_bar
 
-    def calculate_items(self, pdf_bool: bool = True, cdf_bool: bool = True, samples_bool: bool = False,
-                        pdf_sum_bool: bool = True, cdf_sum_bool: bool = True, samples_sum_bool: bool = False,
+    def calculate_items(self, pdf_bool: bool = True, cdf_bool: bool = True, samples_bool: bool = True,
+                        pdf_sum_bool: bool = True, cdf_sum_bool: bool = True, samples_sum_bool: bool = True,
                         mus_bool: bool = True):
         """
         Calculate the following based on the WIMP model for dark matter.
@@ -368,8 +368,8 @@ class ModeLimit(yell.SignalModel, yell.Limit):
         :param cdf_sum_bool: Sum the cdfs of the given materials according to their percentage in the molecule.
         :param samples_sum_bool: Random variable samples using cdf_sum.
         :param mus_bool: Expected number of events based on pdf_sum_convoluted.
-        :return: List of wanted parameters in the following order: pdf, cdf, samples, pdf_sum, cdf_sum, samples_sum,
-        pdf_sum_convoluted, cdf_sum_convoluted, samples_sum_convoluted, mus.
+        :return: Dictionary (with keys corresponding to the masses) of dictionaries of wanted parameters with the
+        following keys: pdf, cdf, samples, pdf_sum, cdf_sum, samples_sum, mus.
         :rtype: list
         """
         if cdf_bool is True and pdf_bool is False:
@@ -421,7 +421,7 @@ class ModeLimit(yell.SignalModel, yell.Limit):
             what_to_return_dict[mass] = what_to_return
         return what_to_return_dict
 
-    def get_limit_from_other_model_maximum_gap(self):
+    def get_limit_from_another_model_maximum_gap(self):
         """
         Calculate the limit for the cross-section of dark matter particles using Yellin's maximum gap method.
 
@@ -456,7 +456,7 @@ class ModeLimit(yell.SignalModel, yell.Limit):
                 dat_file.write(f'{mass}  {sigma}  {mu}\n')
         return
 
-    def get_limit_from_other_model(self, dependency_is_linear: bool):
+    def get_limit_optimum_interval_from_another_model(self, dependency_is_linear: bool):
         """
         Calculate the limit for the cross-section of dark matter particles using Yellin's optimum interval method.
 

@@ -7,7 +7,10 @@ from scipy.stats import norm
 
 def main_example_am_oi_linear():
     """
-    todo !!!!!!!!!!!!!!
+    Code example for limit calculation using cdfs modelled using another signal model, hence am, and optimum interval
+    method, hence oi.
+    Use this template if you are using another model for calculating the pdf, cdf and the expected number of events (μ).
+    In this case the dependency of the expected number of events of cross section is linear.
     :return:
     """
     ######### Mock cdf and mus #########
@@ -31,13 +34,16 @@ def main_example_am_oi_linear():
     omega.get_data(Path(os.getcwd() + '\example_data\cresst_III\C3P1_DetA_AR.dat'))  # Set the path for data.
     omega.set_table_and_results_paths(Path(os.getcwd() + '/table_data/'), Path(os.getcwd() + '/results/'))  # Set directory paths for tables and results.
     omega.set_table_variables(False, 100, 'table')  # Set whether or not you want to create a new table, how many lists there should be per mu and the path for tabulated data.
-    omega.get_limit_from_other_model(dependency_is_linear=True)  # Call the function to determine limit values.
+    omega.get_limit_optimum_interval_from_another_model(dependency_is_linear=True)  # Call the function to determine limit values.
     return
 
 
 def main_example_am_oi_nonlinear():
     """
-    todo !!!!!!!!!!!!!
+    Code example for limit calculation using cdfs modelled using another signal model, hence am, and optimum interval
+    method, hence oi.
+    Use this template if you are using another model for calculating the pdf, cdf and the expected number of events (μ).
+    In this case the dependency of the expected number of events of cross section is nonlinear.
     :return:
     """
     ######### Mock cdf and mus #########
@@ -61,7 +67,7 @@ def main_example_am_oi_nonlinear():
     omega.get_data(Path(os.getcwd() + '\example_data\cresst_III\C3P1_DetA_AR.dat'))  # Set the path for data.
     omega.set_table_and_results_paths(Path(os.getcwd() + '/table_data/'), Path(os.getcwd() + '/results/'))  # Set directory paths for tables and results.
     omega.set_table_variables(False, 100, 'table')  # Set whether or not you want to create a new table, how many lists there should be per mu and the path for tabulated data.
-    omega.get_limit_from_other_model(dependency_is_linear=False)  # Call the function to determine limit values.
+    omega.get_limit_optimum_interval_from_another_model(dependency_is_linear=False)  # Call the function to determine limit values.
     return
 
 

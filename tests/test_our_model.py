@@ -49,6 +49,6 @@ omega.set_mu_interval(0.25, 250)
 omega.set_confidence_level(0.9)
 omega.get_data('C3P1_DetA_AR.dat')  # TODO: data schon in AR, braucht man dann die Multiplikation von AR??
 omega.set_table_variables(False, 100, 'table5')  # 'table' mit mu bis 250 und N = 1000, 'table2' mit mu bis 100 und N = 100, table3 mu linspaced 100 n 1000
-omega.get_limit()
+omega.get_limit_optimum_interval()
 stop = timeit.default_timer()
 print('Time: ', stop - start)

@@ -24,7 +24,7 @@ omega.set_mu_interval(0.25, 50)  # Set the min and max values for μ. Max(μ) sh
 omega.set_confidence_level(0.9)  # Set confidence level.
 omega.get_data('C3P1_DetA_AR.dat')  # Set the path for data.
 omega.set_table_variables(False, 100, 'table')  # Set whether or not you want to create a new table, how many lists there should be per mu and the path for tabulated data.
-omega.get_limit()  # Call the function to determine limit values.
+omega.get_limit_optimum_interval()  # Call the function to determine limit values.
 print(vars(omega).keys())  # Callable variables.
 ####################################
 
