@@ -5,7 +5,7 @@ from pathlib import Path
 from scipy.stats import norm
 
 
-def main_example_am_mg_linear():
+def main_example_am_mg():
     """
     Code example for limit calculation using cdfs modelled using another signal model, hence am, and maximum gap method,
     hence mg.
@@ -39,4 +39,4 @@ def main_example_am_mg_linear():
 
 
 if __name__ == '__main__':
-    main_example_am_mg_linear()
+    main_example_am_mg()
