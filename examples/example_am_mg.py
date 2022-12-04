@@ -32,8 +32,7 @@ def main_example_am_mg():
     omega.set_mu_interval(0.25, 50, 1000)  # Set the min and max values for μ. Max(μ) should be around Max(mus).
     omega.set_confidence_level(0.9)  # Set confidence level.
     omega.get_data(Path(os.getcwd() + '\example_data\cresst_III\C3P1_DetA_AR.dat'))  # Set the path for data.
-    omega.set_table_and_results_paths(Path(os.getcwd() + '/table_data/'), Path(os.getcwd() + '/results/'))  # Set directory paths for tables and results.
-    omega.set_table_variables(False, 100, 'table')  # Set whether or not you want to create a new table, how many lists there should be per mu and the path for tabulated data.
+    omega.set_table_and_results_paths(0, Path(os.getcwd() + '/results/'))  # Set directory paths for tables and results. If using maximum gap method, just set the first variable to False.
     omega.get_limit_from_another_model_maximum_gap()  # Call the function to determine limit values.
     return
 

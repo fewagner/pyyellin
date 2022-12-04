@@ -1,5 +1,6 @@
 import random
 import numpy as np
+
 from scipy import integrate
 from scipy.stats import norm
 from scipy.special import erf
@@ -33,7 +34,7 @@ class SignalModel:
         self.M_P = const.physical_constants["proton mass energy equivalent in MeV"][0]*10**3  # proton mass [keV/c^2]
         self.S = 1e-15/self.METERS_TO_EV*1e3  # skin thickness [c*hbar/keV]
         self.V_ESC = 550000./const.c  # escape velocity [c]
-        self.W = 270000./const.c  # root mean square velocity of the DM particles [c]
+        self.W = 270000./const.c  # root-mean-square velocity of the DM particles [c]
         self.V_EARTH = 220*1.05e3/const.c  # earth velocity [c]
         self.F_A = .52e-15/self.METERS_TO_EV*1e3  # factor for nuclear radius r_0 [c*hbar/keV]
         self.F_S = .9e-15/self.METERS_TO_EV*1e3  # factor for nuclear radius r_0 [c*hbar/keV]
@@ -105,20 +106,6 @@ class SignalModel:
         :param file_name: File path and name. If set to 1, then cut efficiency will be set to a list consisting of ones.
         :return: None
         """
-        # if type(file_name) == str:
-        #     with open(file_name, 'r', encoding='UTF8', newline='') as f:
-        #         dataset = f.readlines()
-        #         dataset = [line.strip('\n') for line in dataset if line[0] != '#']
-        #         dataset = [line.split('\t') for line in dataset if line[0] != '#']
-        #     self.cut_eff.append([float(number[0]) for number in dataset])
-        #     self.cut_eff.append([float(number[1]) for number in dataset])
-        #     energy_grid = np.arange(self.threshold-3*self.resolution, self.energy_grid_upper_bound, self.energy_grid_step_size)
-        #     y_interp = np.interp(energy_grid, self.cut_eff[0], self.cut_eff[1])
-        #     self.cut_eff = np.copy(y_interp)
-        # elif file_name == 1:
-        #     self.cut_eff = [1 for i in range(len(np.arange(self.threshold-3*self.resolution, self.energy_grid_upper_bound, self.energy_grid_step_size)))]
-        # else:
-        #     print('Parameter should either be the file name in string format or the integer 1.')
         if file_name == 1:
             self.cut_eff = [1 for i in range(len(np.arange(self.threshold-3*self.resolution, self.energy_grid_upper_bound, self.energy_grid_step_size)))]
         else:
@@ -171,8 +158,8 @@ class SignalModel:
             eta = np.sqrt(3/2)*self.V_EARTH/self.W
             x_min_3_mock_list = [item for item in x_min if item >= (z+eta)]
             energies_x_min_3.append(energy_grid_mock[len(energy_grid_mock)-len(x_min_3_mock_list)])
-        print(f'm_chi: {np.copy(pars)} GeV')
-        print('max(energies_x_min_3):', max(energies_x_min_3))
+        # print(f'm_chi: {np.copy(pars)} GeV')
+        # print('max(energies_x_min_3):', max(energies_x_min_3))
         if max(energies_x_min_3) < 1:
             max_energy = 1.
         elif max(energies_x_min_3) >= self.energy_grid_upper_bound:

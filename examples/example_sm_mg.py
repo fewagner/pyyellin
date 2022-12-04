@@ -12,7 +12,7 @@ def main_example_sm_mg_1():
     This example uses the CRESST-III data.
     :return:
     """
-    m_chi = np.geomspace(1., 100., 5)  # Define masses.
+    m_chi = np.geomspace(1., 100., 25)  # Define masses.
     materials = [[40.078, 40.078/287.914, 'Ca', Path(os.getcwd() + '\example_data\cresst_III\C3P1_DetA_eff_AR_Ca.dat')],
                  [183.84, 183.84/287.914, 'W', Path(os.getcwd() + '\example_data\cresst_III\C3P1_DetA_eff_AR_W.dat')],
                  [15.999, 15.999*4/287.914, 'O', Path(os.getcwd() + '\example_data\cresst_III\C3P1_DetA_eff_AR_O.dat')]]  # Define the materials of the detector.
@@ -24,8 +24,7 @@ def main_example_sm_mg_1():
     omega.set_mu_interval(0.25, 50, 1000)  # Set the min and max values for μ. Max(μ) should be around Max(mus).
     omega.set_confidence_level(0.9)  # Set confidence level.
     omega.get_data(Path(os.getcwd() + '\example_data\cresst_III\C3P1_DetA_AR.dat'))  # Set the path for data.
-    omega.set_table_and_results_paths(Path(os.getcwd() + '/table_data/'), Path(os.getcwd() + '/results/'))  # Set directory paths for tables and results.
-    omega.set_table_variables(False, 100, 'table')  # Set whether or not you want to create a new table, how many lists there should be per mu and the path for tabulated data.
+    omega.set_table_and_results_paths(0, Path(os.getcwd() + '/results/'))  # Set directory paths for tables and results. If using maximum gap method, just set the first variable to False.
     omega.get_limit_maximum_gap()  # Call the function to determine limit values using the maximum gap method.
     return
 
@@ -38,7 +37,7 @@ def main_example_sm_mg_2():
     This example uses the CRESST-II Lise data.
     :return:
     """
-    m_chi = np.geomspace(1., 100., 5)  # Define masses.
+    m_chi = np.geomspace(1., 100., 25)  # Define masses.
     materials = [[40.078, 40.078/287.914, 'Ca', Path(os.getcwd() + '\example_data\cresst_II_lise\Lise_eff_AR_Ca.dat')],
                  [183.84, 183.84/287.914, 'W', Path(os.getcwd() + '\example_data\cresst_II_lise\Lise_eff_AR_W.dat')],
                  [15.999, 15.999*4/287.914, 'O', Path(os.getcwd() + '\example_data\cresst_II_lise\Lise_eff_AR_O.dat')]]  # Define the materials of the detector.
@@ -50,8 +49,7 @@ def main_example_sm_mg_2():
     omega.set_mu_interval(0.25, 50, 1000)  # Set the min and max values for μ. Max(μ) should be around Max(mus).
     omega.set_confidence_level(0.9)  # Set confidence level.
     omega.get_data(Path(os.getcwd() + '\example_data\cresst_II_lise\Lise_AR.dat'))  # Set the path for data.
-    omega.set_table_and_results_paths(Path(os.getcwd() + '/table_data/'), Path(os.getcwd() + '/results/'))  # Set directory paths for tables and results.
-    omega.set_table_variables(False, 100, 'table')  # Set whether or not you want to create a new table, how many lists there should be per mu and the path for tabulated data.
+    omega.set_table_and_results_paths(0, Path(os.getcwd() + '/results/'))  # Set directory paths for tables and results. If using maximum gap method, just set the first variable to False.
     omega.get_limit_maximum_gap()  # Call the function to determine limit values using the maximum gap method.
     return
 

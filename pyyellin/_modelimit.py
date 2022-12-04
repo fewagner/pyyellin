@@ -1,6 +1,12 @@
 import json
+import os
+
 import numpy as np
 import pyyellin as yell
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+
+from tqdm import tqdm
 from pathlib import Path
 from os.path import exists
 from scipy.signal import savgol_filter
@@ -57,12 +63,17 @@ class ModeLimit(yell.SignalModel, yell.Limit):
         """
         Set the paths for the tables and results.
 
-        :param tables_path: Path for the tables.
+        :param tables_path: Path for the tables. If using maximum gap for limit calculations, this variable should be set to 0.
         :param results_path: Path for the results.
         :return:
         """
-        self.tables_path = Path(tables_path)
+        if tables_path != 0:
+            self.tables_path = Path(tables_path)
+            if not exists(self.tables_path):
+                os.makedirs(self.tables_path)
         self.results_path = Path(results_path)
+        if not exists(self.results_path):
+            os.makedirs(self.results_path)
         return
 
     def set_table_variables(self, flag, number_of_lists, file_name):
@@ -77,14 +88,6 @@ class ModeLimit(yell.SignalModel, yell.Limit):
         self.make_table_bool = flag
         self.number_of_lists = number_of_lists
         self.table_file_name = file_name
-        if flag is True:
-            value = input('Are you sure that you want to make a new table?(y/n)\n')
-            if value == 'n':
-                exit()
-        else:
-            value = input('Are you sure that you do not want to make a new table?(y/n)\n')
-            if value == 'n':
-                exit()
         return
 
     def set_sigma_interval(self, min_sigma, max_sigma):
@@ -171,9 +174,9 @@ class ModeLimit(yell.SignalModel, yell.Limit):
         self.data = np.array(self.data)
         self.data = self.data[(self.data > self.threshold) & (self.data < self.upper_integral_limit)]
 
-        for mass in self.masses:
-            print('Loop number =', list(self.masses).index(mass) + 1, '/', len(self.masses))
-            print(f'mass = {mass} GeV')
+        for mass in tqdm(self.masses):
+            # print('Loop number =', list(self.masses).index(mass) + 1, '/', len(self.masses))
+            # print(f'mass = {mass} GeV')
             pdf = self.pdf(mass)
             pdf_sum = self.pdf_sum_from_pdf(mass, pdf, self.materials)
             cdf_sum = self.cdf_sum_from_pdf_sum(pdf_sum)
@@ -199,6 +202,7 @@ class ModeLimit(yell.SignalModel, yell.Limit):
                            "sections in pb (center), expected number of events (right).\n")
             for mass, sigma, mu in zip(self.masses_for_plot_mg_sm, self.sigmas_corresponding_to_cbarmax_list_mg_sm, self.mus_corresponding_to_cbarmax_list_mg_sm):
                 dat_file.write(f'{mass}  {sigma}  {mu}\n')
+        self._plot_limits(self.masses_for_plot_mg_sm, self.sigmas_corresponding_to_cbarmax_list_mg_sm, 'built-in signal model, maximum gap method')
         return
 
     def get_limit_optimum_interval(self):
@@ -216,9 +220,6 @@ class ModeLimit(yell.SignalModel, yell.Limit):
             x_distributions_table_3d = json.load(open(Path(str(self.tables_path) + '/' + f'x_distributions_table_3d_{self.table_file_name}.json')))
             gamma_max_table_2d = json.load(open(Path(str(self.tables_path) + '/' + f'gamma_max_table_2d_{self.table_file_name}.json')))
         else:
-            value = input('Table seems to be missing. Do you want to make one?(y/n)\n')
-            if value == 'n':
-                exit()
             self.make_table(self.make_table_bool, self.number_of_lists, self.table_file_name)
             x_values_table_3d = [[self._get_x_values(self.table[mu_index][n]) for n in range(len(self.table[mu_index]))] for mu_index in range(len(self.table))]
             x_distributions_table_3d = [self._get_x_distribution(x_values_table_3d[mu_index]) for mu_index in range(len(x_values_table_3d))]
@@ -229,15 +230,8 @@ class ModeLimit(yell.SignalModel, yell.Limit):
             with open(Path(str(self.tables_path) + '/' + f'gamma_max_table_2d_{self.table_file_name}.json'), "w") as f:
                 f.write(json.dumps(gamma_max_table_2d))
 
-        # self.c_90percent_list = []  # TODO: Frag nach, nur für die Projektarbeit/Präsentation wichtig oder?
-        # for mu_index in range(len(gamma_max_table_2d)):
-        #     self.c_90percent_list.append(np.percentile(gamma_max_table_2d[mu_index], self.cl*100))
-        # self.c_90_savgol = savgol_filter(self.c_90percent_list, window_length=25, polyorder=3)
-
         self.masses_for_plot_oi_sm = []
-        for mass in self.masses:
-            print('Loop number =', list(self.masses).index(mass) + 1, '/', len(self.masses))
-            print(f'mass = {mass} GeV')
+        for mass in tqdm(self.masses):
             pdf = self.pdf(mass)
             pdf_sum = self.pdf_sum_from_pdf(mass, pdf, self.materials)
             cdf_sum = self.cdf_sum_from_pdf_sum(pdf_sum)
@@ -263,13 +257,13 @@ class ModeLimit(yell.SignalModel, yell.Limit):
                     if below_count == int(0.05*len(self.mus)):
                         there_are_values_below_90 = True
             if there_are_values_above_90 == there_are_values_below_90 == True:
-                print('Acceptable mu_bar can be found for this mass in this mu interval.')
+                print(f'\nAcceptable mu_bar can be found for m={np.round(mass, 3)} GeV in this mu interval.')
             elif there_are_values_above_90 is True and there_are_values_below_90 is False:
-                print('This mu interval is not suited for this mass, hence all cmax values seem to be above 90%.')
+                print(f'\nThis mu interval is not suited for m={np.round(mass, 3)} GeV, all cmax values seem to be above 90%.')
             elif there_are_values_above_90 is False and there_are_values_below_90 is True:
-                print('This mu interval is not suited for this mass, hence all cmax values seem to be below 90%.')
+                print(f'\nThis mu interval is not suited for m={np.round(mass, 3)} GeV, all cmax values seem to be below 90%.')
             else:
-                print('There seems to be a problem with the calculation of cmax values.')
+                print(f'\nThere seems to be a problem with the calculation of cmax values for m={np.round(mass, 3)} GeV.')
 
             if there_are_values_above_90 == there_are_values_below_90 == True:
 
@@ -277,12 +271,9 @@ class ModeLimit(yell.SignalModel, yell.Limit):
                 mu_bar = np.nan
                 for mu_index in range(len(self.mus)):
                     if y_filter_cmaxs_data_extremeness[mu_index] >= np.percentile(gamma_max_table_2d[mu_index], self.cl*100):
-                        print(y_filter_cmaxs_data_extremeness[mu_index], np.percentile(gamma_max_table_2d[mu_index], self.cl*100))
                         mu_bar = self.mus[mu_index]
                         break
                 sigma_bar = self._find_sigma_bar_from_mu_linear_model(mu_bar)
-                print('mu_bar = ', mu_bar)
-                print('sigma_bar = ', sigma_bar)
 
                 self.masses_for_plot_oi_sm.append(mass)
                 self.mus_corresponding_to_cbarmax_list_oi_sm.append(mu_bar)
@@ -292,6 +283,7 @@ class ModeLimit(yell.SignalModel, yell.Limit):
                            "sections in pb (center), expected number of events (right).\n")
             for mass, sigma, mu in zip(self.masses_for_plot_oi_sm, self.sigmas_corresponding_to_cbarmax_list_oi_sm, self.mus_corresponding_to_cbarmax_list_oi_sm):
                 dat_file.write(f'{mass}  {sigma}  {mu}\n')
+        self._plot_limits(self.masses_for_plot_oi_sm, self.sigmas_corresponding_to_cbarmax_list_oi_sm, 'built-in signal model, optimum interval method')
         return
 
     def _find_sigma_bar_from_mu_linear_model(self, mu_bar):
@@ -386,7 +378,7 @@ class ModeLimit(yell.SignalModel, yell.Limit):
             raise Exception('Set pdf_bool and pdf_sum True in order to calculate mus.')
 
         what_to_return_dict = {}
-        for mass in self.masses:
+        for mass in tqdm(self.masses):
             if pdf_bool is True:
                 pdf = self.pdf(mass)
             else:
@@ -430,9 +422,7 @@ class ModeLimit(yell.SignalModel, yell.Limit):
         self.data = np.array(self.data)
         self.data = self.data[(self.data > self.threshold) & (self.data < self.upper_integral_limit)]
 
-        for mass in self.masses:
-            print('Loop number =', list(self.masses).index(mass) + 1, '/', len(self.masses))
-            print(f'mass = {mass} GeV')
+        for mass in tqdm(self.masses):
             cdf_for_this_mass = self.cdf[list(self.masses).index(mass)]
             mus = self.mus_from_other_model[list(self.masses).index(mass)]
 
@@ -454,6 +444,7 @@ class ModeLimit(yell.SignalModel, yell.Limit):
                            "sections in pb (center), expected number of events (right).\n")
             for mass, sigma, mu in zip(self.masses_for_plot_mg_am, self.sigmas_corresponding_to_cbarmax_list_mg_am, self.mus_corresponding_to_cbarmax_list_mg_am):
                 dat_file.write(f'{mass}  {sigma}  {mu}\n')
+        self._plot_limits(self.masses_for_plot_mg_am, self.sigmas_corresponding_to_cbarmax_list_mg_am, 'another signal model, maximum gap method')
         return
 
     def get_limit_optimum_interval_from_another_model(self, dependency_is_linear: bool):
@@ -472,9 +463,6 @@ class ModeLimit(yell.SignalModel, yell.Limit):
             x_distributions_table_3d = json.load(open(Path(str(self.tables_path) + '/' + f'x_distributions_table_3d_{self.table_file_name}.json')))
             gamma_max_table_2d = json.load(open(Path(str(self.tables_path) + '/' + f'gamma_max_table_2d_{self.table_file_name}.json')))
         else:
-            value = input('Table seems to be missing. Do you want to make one?(y/n)\n')
-            if value == 'n':
-                exit()
             self.make_table(self.make_table_bool, self.number_of_lists, self.table_file_name)
             x_values_table_3d = [[self._get_x_values(self.table[mu_index][n]) for n in range(len(self.table[mu_index]))] for mu_index in range(len(self.table))]
             x_distributions_table_3d = [self._get_x_distribution(x_values_table_3d[mu_index]) for mu_index in range(len(x_values_table_3d))]
@@ -485,15 +473,8 @@ class ModeLimit(yell.SignalModel, yell.Limit):
             with open(Path(str(self.tables_path) + '/' + f'gamma_max_table_2d_{self.table_file_name}.json'), "w") as f:
                 f.write(json.dumps(gamma_max_table_2d))
 
-        # self.c_90percent_list = []  # TODO: ??
-        # for mu_index in range(len(gamma_max_table_2d)):
-        #     self.c_90percent_list.append(np.percentile(gamma_max_table_2d[mu_index], self.cl*100))
-        # self.c_90_savgol = savgol_filter(self.c_90percent_list, window_length=25, polyorder=3)
-
         self.masses_for_plot_oi_am = []
-        for mass in self.masses:
-            print('Loop number =', list(self.masses).index(mass) + 1)
-            print('mass =', mass)
+        for mass in tqdm(self.masses):
             cdf_for_this_mass = self.cdf[list(self.masses).index(mass)]
             self.mus_from_cdf = self.mus_from_other_model[list(self.masses).index(mass)]
 
@@ -517,13 +498,13 @@ class ModeLimit(yell.SignalModel, yell.Limit):
                     if below_count == int(0.05*len(self.mus)):
                         there_are_values_below_90 = True
             if there_are_values_above_90 == there_are_values_below_90 == True:
-                print('Acceptable mu_bar can be found for this mass in this mu interval.')
+                print(f'\nAcceptable mu_bar can be found for m={np.round(mass, 3)} GeV in this mu interval.')
             elif there_are_values_above_90 is True and there_are_values_below_90 is False:
-                print('This mu interval is not suited for this mass, hence all cmax values seem to be above 90%.')
+                print(f'\nThis mu interval is not suited for m={np.round(mass, 3)} GeV, all cmax values seem to be above 90%.')
             elif there_are_values_above_90 is False and there_are_values_below_90 is True:
-                print('This mu interval is not suited for this mass, hence all cmax values seem to be below 90%.')
+                print(f'\nThis mu interval is not suited for m={np.round(mass, 3)} GeV, all cmax values seem to be below 90%.')
             else:
-                print('There seems to be a problem with the calculation of cmax values.')
+                print(f'\nThere seems to be a problem with the calculation of cmax values for m={np.round(mass, 3)} GeV.')
 
             if there_are_values_above_90 == there_are_values_below_90 == True:
 
@@ -531,15 +512,12 @@ class ModeLimit(yell.SignalModel, yell.Limit):
                 mu_bar = np.nan
                 for mu_index in range(len(self.mus)):
                     if y_filter_cmaxs_data_extremeness[mu_index] >= np.percentile(gamma_max_table_2d[mu_index], self.cl*100):
-                        print(y_filter_cmaxs_data_extremeness[mu_index], np.percentile(gamma_max_table_2d[mu_index], self.cl*100))
                         mu_bar = self.mus[mu_index]
                         break
                 if dependency_is_linear is True:
                     sigma_bar = self._find_sigma_bar_from_mu_linear_model(mu_bar)
                 else:
                     sigma_bar = self._find_sigma_bar_from_mu_nonlinear_model(mu_bar)
-                print('mu_bar = ', mu_bar)
-                print('sigma_bar = ', sigma_bar)
 
                 self.masses_for_plot_oi_am.append(mass)
                 self.mus_corresponding_to_cbarmax_list_oi_am.append(mu_bar)
@@ -553,4 +531,34 @@ class ModeLimit(yell.SignalModel, yell.Limit):
                            "sections in pb (center), expected number of events (right).\n")
             for mass, sigma, mu in zip(self.masses_for_plot_oi_am, self.sigmas_corresponding_to_cbarmax_list_oi_am, self.mus_corresponding_to_cbarmax_list_oi_am):
                 dat_file.write(f'{mass}  {sigma}  {mu}\n')
+        self._plot_limits(self.masses_for_plot_oi_am, self.sigmas_corresponding_to_cbarmax_list_oi_am, 'another signal model, optimum interval method')
+        return
+
+    @staticmethod
+    def _plot_limits(masses_for_plot, sigmas_corresponding_to_cbarmax_list, identifier):
+        """
+        Calculate the limit for the cross-section of dark matter particles using Yellin's optimum interval method.
+
+        :param dependency_is_linear: Whether the dependancy of mus on sigmas is linear or not.
+        :return: None
+        """
+        id_abb = {
+            'another signal model, optimum interval method': 'am_oi',
+            'another signal model, maximum gap method': 'am_mg',
+            'built-in signal model, optimum interval method': 'sm_oi',
+            'built-in signal model, maximum gap method': 'sm_mg',
+        }
+
+        plt.figure(figsize=(15, 8))
+        plt.plot(masses_for_plot, sigmas_corresponding_to_cbarmax_list, label=f'Cross sections, {identifier}',
+                 linewidth=2.75)
+        plt.title('Exclusion Limits')
+        plt.xscale('log')
+        plt.yscale('log')
+        plt.xlabel('Mass (GeV)', fontsize=20)
+        plt.ylabel('Cross Section (pb)', fontsize=20)
+        plt.grid(which='both', linestyle='dotted')
+        plt.legend(prop={"size": 15})
+        plt.savefig(Path(f'results/exclusion_chart_{id_abb[identifier]}.png'), format='png', dpi=300, facecolor='white', edgecolor='white',
+                    bbox_inches='tight', pad_inches=0.05)
         return
