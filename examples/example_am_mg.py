@@ -25,7 +25,7 @@ def main_example_am_mg():
     ####################################
 
     m_chi = np.geomspace(1., 100., 5)  # Define masses.
-    omega = yell.ModeLimit()  # Create instance
+    omega = yell.ModeLimit()  # Create instance.
     omega.add_sigmas_and_mus(sigmas, mus_1)  # Add cross-sections (σ) and corresponding expected number of events (μ).
     omega.add_cdf(cdf_list)  # Add list [[energies, cdf1], [energies, cdf2],...]
     omega.set_masses(m_chi)  # Set dark matter masses.
