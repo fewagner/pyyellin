@@ -1,0 +1,16 @@
+sigma_P0,0.005
+sigma_P1,0.019085374111952186
+sigma_L0,0.1
+sigma_L1,0.4531643510209006
+sigma_L2,0.007344720505863309
+E_threshold,0.025
+epsilon,0.8211862062631299
+nband_Ca_QF,0.0556
+nband_Ca_a,-0.1887
+nband_Ca_d,801.3
+nband_W_QF,0.0196
+nband_W_a,0.0
+nband_W_d,1.0
+nband_O_QF,0.0739
+nband_O_a,-0.7088
+nband_O_d,567.1
