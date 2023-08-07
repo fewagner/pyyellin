@@ -26,6 +26,6 @@ where $\sigma_L$ is the resolution of the light detector and $\sigma_P$ is the r
 
 $$\sigma_{x}(E)=\sqrt{(\sigma_L(L_x(E))^2+\left(\frac{dL_x}{dE}\sigma_P(E)\right)^2}$$
 $$\sigma_{P}(E)=\sqrt{\sigma^2_{P,0}+\sigma^2_{P,1}\left(E^2 - E_\text{thr}^2\right)}$$
-$$\sigma_{L}(L)=\sqrt{\sigma^2_{L,0}+L_1L+L_2L^2}.$$
+$$\sigma_{L}(L)=\sqrt{\sigma^2_{L,0}+\sigma_{L,1}L+\sigma_{L,2}L^2}.$$
 
 For the data attached, an approximation of the parameters can be found in the file `DetA_parameters.csv`.
