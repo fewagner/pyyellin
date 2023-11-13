@@ -18,6 +18,11 @@ Here the term $LY_e(E)$ describes the mean light yield of the electron band as
 $$LY_{e}(E)=L_0+L_1E,$$
 
 and $L_0,\,L_1,\,d_{x},\,a_{x}$ and $QF_{x}$ are parameters derived from calibration data.
+You will also need the full description of the electron and the gamma band for your plot, here in terms of light:
+
+$$L_{e,NP}(E)=(L_0E+L_1E^2)\times \left[1-a_{e}\exp{\left(-\frac{E}{d_e}\right)}\right]$$
+
+$$L_{\gamma}(E)=L_{e,NP}(E\times(Q_{\gamma,0}+Q_{\gamma,1}))$$
 
 In Schmaler the width of the band in light (!) is described by 
 $$\sigma_{x}(E)=\sqrt{(\sigma_L(L_x(E))^2+(QF_{x}\sigma_P(E))^2},$$
